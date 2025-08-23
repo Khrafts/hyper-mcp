@@ -3,16 +3,9 @@ export * from './ErrorTypes.js';
 export * from './ErrorHandler.js';
 
 // Re-export commonly used types for convenience
-export type {
-  ErrorContext,
-  ErrorDetails
-} from './ErrorTypes.js';
+export type { ErrorContext, ErrorDetails } from './ErrorTypes.js';
 
-export type {
-  ErrorRecoveryStrategy,
-  ErrorHandlerConfig,
-  ErrorMetrics
-} from './ErrorHandler.js';
+export type { ErrorRecoveryStrategy, ErrorHandlerConfig, ErrorMetrics } from './ErrorHandler.js';
 
 export {
   ErrorCode,
@@ -26,5 +19,5 @@ export {
   ProtocolError,
   ConfigurationError,
   BusinessLogicError,
-  SystemError
+  SystemError,
 } from './ErrorTypes.js';

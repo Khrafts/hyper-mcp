@@ -66,15 +66,12 @@ export class AdapterRegistry implements IAdapterRegistry {
     );
 
     // Start background cleanup
-    this.cleanupInterval = setInterval(
-      () => this.performBackgroundCleanup(),
-      cleanupIntervalMs
-    );
+    this.cleanupInterval = setInterval(() => this.performBackgroundCleanup(), cleanupIntervalMs);
   }
 
   async register(adapter: BaseAdapter): Promise<void> {
     const adapterName = adapter.getName();
-    
+
     // Check if adapter already exists
     if (this.adapters.has(adapterName)) {
       logger.warn('Adapter already exists, replacing', {
@@ -82,7 +79,7 @@ export class AdapterRegistry implements IAdapterRegistry {
         previous_version: this.adapters.get(adapterName)?.adapter.getVersion(),
         new_version: adapter.getVersion(),
       });
-      
+
       // Cleanup existing adapter
       await this.unregister(adapterName);
     }
@@ -112,7 +109,6 @@ export class AdapterRegistry implements IAdapterRegistry {
 
       // Perform initial health check
       await adapter.healthCheck();
-
     } catch (error) {
       logger.error('Failed to register adapter', {
         adapter_name: adapterName,
@@ -144,11 +140,10 @@ export class AdapterRegistry implements IAdapterRegistry {
         use_count: entry.useCount,
         remaining_adapters: this.adapters.size,
       });
-
     } catch (error) {
       // Remove from registry even if disconnect fails
       this.adapters.delete(adapterName);
-      
+
       logger.error('Error during adapter unregistration', {
         adapter_name: adapterName,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -190,7 +185,7 @@ export class AdapterRegistry implements IAdapterRegistry {
       }
 
       const adapter = entry.adapter;
-      
+
       if (filter?.protocol && adapter.getProtocol() !== filter.protocol) {
         continue;
       }
@@ -216,7 +211,7 @@ export class AdapterRegistry implements IAdapterRegistry {
   }
 
   listAdapterNames(filter?: AdapterFilter): string[] {
-    return this.getAdapters(filter).map(adapter => adapter.getName());
+    return this.getAdapters(filter).map((adapter) => adapter.getName());
   }
 
   enableAdapter(adapterName: string): void {
@@ -289,7 +284,7 @@ export class AdapterRegistry implements IAdapterRegistry {
     let totalRequests = 0;
     let totalResponseTime = 0;
     let responseTimeCount = 0;
-    
+
     const protocolCounts: Record<string, number> = {};
     const capabilityCounts: Record<string, number> = {};
 
@@ -355,7 +350,7 @@ export class AdapterRegistry implements IAdapterRegistry {
   private async performBackgroundHealthCheck(): Promise<void> {
     try {
       const healthStatuses = await this.getAllAdapterHealth();
-      
+
       let healthyCount = 0;
       let unhealthyCount = 0;
       const unhealthyAdapters: string[] = [];
@@ -381,7 +376,6 @@ export class AdapterRegistry implements IAdapterRegistry {
           unhealthy_adapters: unhealthyAdapters,
         });
       }
-
     } catch (error) {
       logger.error('Background health check failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -399,10 +393,13 @@ export class AdapterRegistry implements IAdapterRegistry {
       for (const [name, entry] of this.adapters.entries()) {
         const idleTime = now - entry.lastUsed;
         const unhealthy = !entry.adapter.isHealthy();
-        
+
         // Mark for cleanup if idle for too long or persistently unhealthy
-        if ((idleTime > maxIdleTime && entry.useCount === 0) || 
-            (unhealthy && idleTime > 60 * 60 * 1000)) { // 1 hour for unhealthy
+        if (
+          (idleTime > maxIdleTime && entry.useCount === 0) ||
+          (unhealthy && idleTime > 60 * 60 * 1000)
+        ) {
+          // 1 hour for unhealthy
           adaptersToCleanup.push(name);
         }
       }
@@ -416,7 +413,6 @@ export class AdapterRegistry implements IAdapterRegistry {
           await this.unregister(adapterName);
         }
       }
-
     } catch (error) {
       logger.error('Background cleanup failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -435,8 +431,8 @@ export class AdapterRegistry implements IAdapterRegistry {
     clearInterval(this.cleanupInterval);
 
     // Disconnect all adapters
-    const disconnectPromises = Array.from(this.adapters.keys()).map(
-      adapterName => this.unregister(adapterName)
+    const disconnectPromises = Array.from(this.adapters.keys()).map((adapterName) =>
+      this.unregister(adapterName)
     );
 
     await Promise.allSettled(disconnectPromises);
@@ -449,8 +445,8 @@ export class AdapterRegistry implements IAdapterRegistry {
   // Bulk operations
   async enableAll(): Promise<void> {
     const adapterNames = Array.from(this.adapters.keys());
-    adapterNames.forEach(name => this.enableAdapter(name));
-    
+    adapterNames.forEach((name) => this.enableAdapter(name));
+
     logger.info('All adapters enabled', {
       adapter_count: adapterNames.length,
     });
@@ -458,8 +454,8 @@ export class AdapterRegistry implements IAdapterRegistry {
 
   async disableAll(): Promise<void> {
     const adapterNames = Array.from(this.adapters.keys());
-    adapterNames.forEach(name => this.disableAdapter(name));
-    
+    adapterNames.forEach((name) => this.disableAdapter(name));
+
     logger.info('All adapters disabled', {
       adapter_count: adapterNames.length,
     });
@@ -467,7 +463,7 @@ export class AdapterRegistry implements IAdapterRegistry {
 
   async enableByProtocol(protocol: string): Promise<void> {
     let enabledCount = 0;
-    
+
     for (const [name, entry] of this.adapters.entries()) {
       if (entry.adapter.getProtocol() === protocol) {
         this.enableAdapter(name);
@@ -483,7 +479,7 @@ export class AdapterRegistry implements IAdapterRegistry {
 
   async disableByProtocol(protocol: string): Promise<void> {
     let disabledCount = 0;
-    
+
     for (const [name, entry] of this.adapters.entries()) {
       if (entry.adapter.getProtocol() === protocol) {
         this.disableAdapter(name);
@@ -507,7 +503,7 @@ export class AdapterRegistry implements IAdapterRegistry {
   }
 
   getEnabledAdapterCount(): number {
-    return Array.from(this.adapters.values()).filter(entry => entry.enabled).length;
+    return Array.from(this.adapters.values()).filter((entry) => entry.enabled).length;
   }
 
   getProtocols(): string[] {
@@ -521,7 +517,7 @@ export class AdapterRegistry implements IAdapterRegistry {
   getCapabilities(): string[] {
     const capabilities = new Set<string>();
     for (const entry of this.adapters.values()) {
-      entry.adapter.getCapabilities().forEach(cap => capabilities.add(cap));
+      entry.adapter.getCapabilities().forEach((cap) => capabilities.add(cap));
     }
     return Array.from(capabilities);
   }

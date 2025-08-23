@@ -1,8 +1,5 @@
 import { z } from 'zod';
-import { 
-  ValidationError, 
-  ErrorCode
-} from '../errors/ErrorTypes.js';
+import { ValidationError, ErrorCode } from '../errors/ErrorTypes.js';
 import { createComponentLogger } from '../utils/logger.js';
 
 const logger = createComponentLogger('VALIDATION_UTILS');
@@ -28,48 +25,58 @@ export const CommonSchemas = {
   email: z.string().email('Invalid email format'),
   url: z.string().url('Invalid URL format'),
   uuid: z.string().uuid('Invalid UUID format'),
-  
+
   // Number validations
   positiveNumber: z.number().positive('Number must be positive'),
   nonNegativeNumber: z.number().min(0, 'Number cannot be negative'),
   percentage: z.number().min(0).max(100, 'Percentage must be between 0 and 100'),
-  
+
   // Date validations
-  futureDate: z.date().refine(date => date > new Date(), 'Date must be in the future'),
-  pastDate: z.date().refine(date => date < new Date(), 'Date must be in the past'),
-  
+  futureDate: z.date().refine((date) => date > new Date(), 'Date must be in the future'),
+  pastDate: z.date().refine((date) => date < new Date(), 'Date must be in the past'),
+
   // Trading-specific validations
-  price: z.number().positive('Price must be positive').multipleOf(0.01, 'Price must have at most 2 decimal places'),
+  price: z
+    .number()
+    .positive('Price must be positive')
+    .multipleOf(0.01, 'Price must have at most 2 decimal places'),
   quantity: z.number().positive('Quantity must be positive'),
-  symbol: z.string().min(1).max(20).regex(/^[A-Z0-9-]+$/, 'Symbol must contain only uppercase letters, numbers, and hyphens'),
-  
+  symbol: z
+    .string()
+    .min(1)
+    .max(20)
+    .regex(/^[A-Z0-9-]+$/, 'Symbol must contain only uppercase letters, numbers, and hyphens'),
+
   // Pagination
   pagination: z.object({
     page: z.number().int().min(1, 'Page must be at least 1').default(1),
     limit: z.number().int().min(1).max(1000, 'Limit must be between 1 and 1000').default(50),
   }),
-  
+
   // Common query filters
-  dateRange: z.object({
-    startDate: z.string().datetime().optional(),
-    endDate: z.string().datetime().optional(),
-  }).refine(
-    data => !data.startDate || !data.endDate || new Date(data.startDate) <= new Date(data.endDate),
-    'Start date must be before or equal to end date'
-  ),
+  dateRange: z
+    .object({
+      startDate: z.string().datetime().optional(),
+      endDate: z.string().datetime().optional(),
+    })
+    .refine(
+      (data) =>
+        !data.startDate || !data.endDate || new Date(data.startDate) <= new Date(data.endDate),
+      'Start date must be before or equal to end date'
+    ),
 };
 
 // HyperLiquid-specific schemas
 export const HyperLiquidSchemas = {
   address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address format'),
   orderType: z.enum(['market', 'limit', 'stop', 'stop_limit'], {
-    errorMap: () => ({ message: 'Order type must be one of: market, limit, stop, stop_limit' })
+    errorMap: () => ({ message: 'Order type must be one of: market, limit, stop, stop_limit' }),
   }),
   side: z.enum(['buy', 'sell'], {
-    errorMap: () => ({ message: 'Side must be either buy or sell' })
+    errorMap: () => ({ message: 'Side must be either buy or sell' }),
   }),
   timeInForce: z.enum(['GTC', 'IOC', 'FOK'], {
-    errorMap: () => ({ message: 'Time in force must be one of: GTC, IOC, FOK' })
+    errorMap: () => ({ message: 'Time in force must be one of: GTC, IOC, FOK' }),
   }),
   leverage: z.number().min(1).max(50, 'Leverage must be between 1 and 50'),
 };
@@ -100,13 +107,13 @@ export class ValidationUtils {
 
   // Validate data against a schema
   validate<T>(
-    schema: z.ZodSchema<T>, 
-    data: unknown, 
+    schema: z.ZodSchema<T>,
+    data: unknown,
     context: ValidationContext
   ): ValidationResult<T> {
     try {
       const validatedData = schema.parse(data);
-      
+
       logger.debug('Validation successful', {
         component: context.component,
         operation: context.operation,
@@ -117,7 +124,6 @@ export class ValidationUtils {
         success: true,
         data: validatedData,
       };
-
     } catch (error) {
       if (error instanceof z.ZodError) {
         return this.handleZodError(error, context);
@@ -150,7 +156,7 @@ export class ValidationUtils {
 
   // Handle Zod validation errors
   private handleZodError(zodError: z.ZodError, context: ValidationContext): ValidationResult {
-    const errors = zodError.errors.map(err => {
+    const errors = zodError.errors.map((err) => {
       const path = err.path.length > 0 ? err.path.join('.') : 'root';
       return `${path}: ${err.message}`;
     });
@@ -159,11 +165,16 @@ export class ValidationUtils {
 
     // Determine specific error code based on error type
     let errorCode = ErrorCode.VALIDATION_SCHEMA_ERROR;
-    if (zodError.errors.some(err => err.code === 'invalid_type' && err.expected === 'string' && err.received === 'undefined')) {
+    if (
+      zodError.errors.some(
+        (err) =>
+          err.code === 'invalid_type' && err.expected === 'string' && err.received === 'undefined'
+      )
+    ) {
       errorCode = ErrorCode.VALIDATION_REQUIRED_FIELD;
-    } else if (zodError.errors.some(err => err.code === 'invalid_string')) {
+    } else if (zodError.errors.some((err) => err.code === 'invalid_string')) {
       errorCode = ErrorCode.VALIDATION_INVALID_FORMAT;
-    } else if (zodError.errors.some(err => err.code === 'too_small' || err.code === 'too_big')) {
+    } else if (zodError.errors.some((err) => err.code === 'too_small' || err.code === 'too_big')) {
       errorCode = ErrorCode.VALIDATION_RANGE_ERROR;
     }
 
@@ -182,7 +193,7 @@ export class ValidationUtils {
       },
       zodError,
       'Please check the provided data and try again',
-      errors.map(error => `Fix: ${error}`)
+      errors.map((error) => `Fix: ${error}`)
     );
 
     logger.warn('Validation failed', {
@@ -209,14 +220,11 @@ export class ValidationUtils {
   ): ValidationResult<T> {
     if (customMessages) {
       // Create schema with custom error messages
-      const customSchema = schema.refine(
-        () => true,
-        {
-          message: 'Custom validation failed',
-          params: { customMessages }
-        }
-      );
-      
+      const customSchema = schema.refine(() => true, {
+        message: 'Custom validation failed',
+        params: { customMessages },
+      });
+
       return this.validate(customSchema, data, context);
     }
 
@@ -252,12 +260,12 @@ export class ValidationUtils {
     transform: (data: T) => U
   ): ValidationResult<U> {
     const result = this.validate(schema, data, context);
-    
+
     if (!result.success || !result.data) {
       return {
         success: false,
         error: result.error,
-        errors: result.errors
+        errors: result.errors,
       };
     }
 
@@ -295,7 +303,7 @@ export class ValidationUtils {
   // Register custom validator
   registerCustomValidator(name: string, schema: z.ZodSchema): void {
     this.customValidators.set(name, schema);
-    
+
     logger.debug('Custom validator registered', {
       validator_name: name,
       total_validators: this.customValidators.size,
@@ -314,7 +322,7 @@ export class ValidationUtils {
     context: ValidationContext
   ): ValidationResult<T> {
     const validator = this.customValidators.get(validatorName);
-    
+
     if (!validator) {
       const error = new ValidationError(
         ErrorCode.VALIDATION_SCHEMA_ERROR,
@@ -359,12 +367,12 @@ export class ValidationUtils {
       };
 
       const result = this.validate(validation.schema, validation.data, fieldContext);
-      
+
       if (result.success && result.data !== undefined) {
         results[validation.name] = result.data;
       } else if (result.errors) {
         hasErrors = true;
-        errors.push(...result.errors.map(error => `${validation.name}: ${error}`));
+        errors.push(...result.errors.map((error) => `${validation.name}: ${error}`));
       }
     }
 
@@ -405,9 +413,9 @@ export class ValidationUtils {
     return z.any().superRefine((data, ctx) => {
       const schema = condition(data) ? trueSchema : falseSchema;
       const result = schema.safeParse(data);
-      
+
       if (!result.success) {
-        result.error.errors.forEach(error => {
+        result.error.errors.forEach((error) => {
           ctx.addIssue(error);
         });
       }
@@ -460,7 +468,7 @@ export class ValidationUtils {
   clearCustomValidators(): void {
     const count = this.customValidators.size;
     this.customValidators.clear();
-    
+
     logger.info('Custom validators cleared', {
       cleared_count: count,
     });
@@ -512,8 +520,9 @@ export const Sanitizers = {
 
   removeNullUndefined: (data: any): any => {
     if (Array.isArray(data)) {
-      return data.filter(item => item !== null && item !== undefined)
-                .map(Sanitizers.removeNullUndefined);
+      return data
+        .filter((item) => item !== null && item !== undefined)
+        .map(Sanitizers.removeNullUndefined);
     }
     if (data && typeof data === 'object') {
       const sanitized: any = {};

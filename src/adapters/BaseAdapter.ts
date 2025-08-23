@@ -1,5 +1,10 @@
 import { ApiClient, ApiClientConfig } from '../utils/ApiClient.js';
-import { createComponentLogger, logPerformance, logHealthCheck, logConnection } from '../utils/logger.js';
+import {
+  createComponentLogger,
+  logPerformance,
+  logHealthCheck,
+  logConnection,
+} from '../utils/logger.js';
 import { z } from 'zod';
 
 const logger = createComponentLogger('BASE_ADAPTER');
@@ -63,24 +68,32 @@ export const AdapterConfigSchema = z.object({
   name: z.string().min(1),
   baseUrl: z.string().url(),
   timeout: z.number().positive().optional().default(30000),
-  retries: z.object({
-    maxRetries: z.number().min(0).default(3),
-    baseDelay: z.number().positive().default(1000),
-    maxDelay: z.number().positive().default(30000),
-    backoffMultiplier: z.number().positive().default(2),
-  }).optional(),
-  rateLimit: z.object({
-    requestsPerMinute: z.number().positive().default(60),
-    burstLimit: z.number().positive().default(10),
-  }).optional(),
-  authentication: z.object({
-    type: z.enum(['none', 'api_key', 'bearer', 'oauth', 'custom']).default('none'),
-    credentials: z.record(z.string()).optional(),
-  }).optional(),
-  connection: z.object({
-    keepAlive: z.boolean().default(true),
-    maxConnections: z.number().positive().default(20),
-  }).optional(),
+  retries: z
+    .object({
+      maxRetries: z.number().min(0).default(3),
+      baseDelay: z.number().positive().default(1000),
+      maxDelay: z.number().positive().default(30000),
+      backoffMultiplier: z.number().positive().default(2),
+    })
+    .optional(),
+  rateLimit: z
+    .object({
+      requestsPerMinute: z.number().positive().default(60),
+      burstLimit: z.number().positive().default(10),
+    })
+    .optional(),
+  authentication: z
+    .object({
+      type: z.enum(['none', 'api_key', 'bearer', 'oauth', 'custom']).default('none'),
+      credentials: z.record(z.string()).optional(),
+    })
+    .optional(),
+  connection: z
+    .object({
+      keepAlive: z.boolean().default(true),
+      maxConnections: z.number().positive().default(20),
+    })
+    .optional(),
 });
 
 export type AdapterConfig = z.infer<typeof AdapterConfigSchema>;
@@ -98,7 +111,7 @@ export abstract class BaseAdapter {
   constructor(metadata: AdapterMetadata, config: AdapterConfig) {
     // Validate configuration
     const validatedConfig = AdapterConfigSchema.parse(config);
-    
+
     this.metadata = metadata;
     this.config = validatedConfig;
     this.startTime = Date.now();
@@ -130,11 +143,19 @@ export abstract class BaseAdapter {
         baseDelay: this.config.retries?.baseDelay || 1000,
         maxDelay: this.config.retries?.maxDelay || 30000,
         backoffMultiplier: this.config.retries?.backoffMultiplier || 2,
-        retryableErrors: ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'RATE_LIMIT', 'TIMEOUT', 'NETWORK_ERROR'],
+        retryableErrors: [
+          'ECONNRESET',
+          'ETIMEDOUT',
+          'ECONNREFUSED',
+          'RATE_LIMIT',
+          'TIMEOUT',
+          'NETWORK_ERROR',
+        ],
         retryableStatusCodes: [408, 429, 502, 503, 504],
       },
       rateLimit: {
-        requestsPerMinute: this.config.rateLimit?.requestsPerMinute || metadata.rateLimit.requestsPerMinute,
+        requestsPerMinute:
+          this.config.rateLimit?.requestsPerMinute || metadata.rateLimit.requestsPerMinute,
         burstLimit: this.config.rateLimit?.burstLimit || metadata.rateLimit.burstLimit,
       },
       headers: this.buildAuthHeaders(),
@@ -155,12 +176,16 @@ export abstract class BaseAdapter {
   // Abstract methods that must be implemented by concrete adapters
   abstract initialize(): Promise<void>;
   abstract validateConnection(): Promise<boolean>;
-  abstract getEndpointInfo(endpoint: string): { path: string; method: string; schema?: z.ZodSchema };
+  abstract getEndpointInfo(endpoint: string): {
+    path: string;
+    method: string;
+    schema?: z.ZodSchema;
+  };
 
   // Connection management
   async connect(): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       logger.info('Connecting adapter', {
         adapter: this.metadata.name,
@@ -168,7 +193,7 @@ export abstract class BaseAdapter {
       });
 
       await this.initialize();
-      
+
       const connectionValid = await this.validateConnection();
       if (!connectionValid) {
         throw new Error('Connection validation failed');
@@ -176,22 +201,21 @@ export abstract class BaseAdapter {
 
       this.isConnected = true;
       logConnection(this.metadata.name, 'connected', this.config.baseUrl);
-      
+
       logPerformance(this.metadata.name, 'connection', startTime, {
         successful: true,
       });
-
     } catch (error) {
       this.isConnected = false;
       logConnection(this.metadata.name, 'disconnected', this.config.baseUrl, {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       logPerformance(this.metadata.name, 'connection', startTime, {
         successful: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       throw error;
     }
   }
@@ -200,9 +224,9 @@ export abstract class BaseAdapter {
     try {
       this.apiClient.cleanup();
       this.isConnected = false;
-      
+
       logConnection(this.metadata.name, 'disconnected', this.config.baseUrl);
-      
+
       logger.info('Adapter disconnected', {
         adapter: this.metadata.name,
         uptime_ms: Date.now() - this.startTime,
@@ -222,14 +246,14 @@ export abstract class BaseAdapter {
     const cacheTime = 30000; // 30 seconds
 
     // Return cached result if recent and not forced
-    if (!force && (now - this.lastHealthCheck) < cacheTime) {
+    if (!force && now - this.lastHealthCheck < cacheTime) {
       return this.healthStatus;
     }
-    
+
     try {
       const clientHealth = await this.apiClient.healthCheck();
       const connectionValid = await this.validateConnection();
-      
+
       this.healthStatus = {
         healthy: clientHealth.healthy && connectionValid && this.isConnected,
         latencyMs: clientHealth.latencyMs,
@@ -244,14 +268,13 @@ export abstract class BaseAdapter {
       };
 
       this.lastHealthCheck = now;
-      
+
       logHealthCheck(this.metadata.name, this.healthStatus.healthy, {
         latency_ms: this.healthStatus.latencyMs,
         connected: this.isConnected,
       });
 
       return this.healthStatus;
-
     } catch (error) {
       this.healthStatus = {
         healthy: false,
@@ -321,10 +344,9 @@ export abstract class BaseAdapter {
       });
 
       return result;
-
     } catch (error) {
       this.statistics.failedRequests++;
-      
+
       // Track specific error types
       if (error instanceof Error) {
         if (error.message.includes('rate limit') || error.message.includes('429')) {
@@ -361,13 +383,13 @@ export abstract class BaseAdapter {
           headers[credentials.apiKeyHeader] = credentials.apiKey;
         }
         break;
-      
+
       case 'bearer':
         if (credentials.token) {
           headers['Authorization'] = `Bearer ${credentials.token}`;
         }
         break;
-      
+
       case 'oauth':
         if (credentials.accessToken) {
           headers['Authorization'] = `Bearer ${credentials.accessToken}`;
@@ -382,10 +404,10 @@ export abstract class BaseAdapter {
   private updateAverageResponseTime(responseTime: number): void {
     const totalRequests = this.statistics.totalRequests;
     const currentAverage = this.statistics.averageResponseTime;
-    
+
     // Calculate rolling average
-    this.statistics.averageResponseTime = 
-      ((currentAverage * (totalRequests - 1)) + responseTime) / totalRequests;
+    this.statistics.averageResponseTime =
+      (currentAverage * (totalRequests - 1) + responseTime) / totalRequests;
   }
 
   // Public getters

@@ -5,7 +5,7 @@ export enum ErrorSeverity {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  CRITICAL = 'critical'
+  CRITICAL = 'critical',
 }
 
 export enum ErrorCategory {
@@ -23,7 +23,7 @@ export enum ErrorCategory {
   CONFIGURATION = 'configuration',
   RESOURCE = 'resource',
   BUSINESS_LOGIC = 'business_logic',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
 }
 
 export enum ErrorCode {
@@ -92,7 +92,7 @@ export enum ErrorCode {
   SYSTEM_OVERLOADED = 1903,
 
   // Unknown errors (9999)
-  UNKNOWN_ERROR = 9999
+  UNKNOWN_ERROR = 9999,
 }
 
 export interface ErrorContext {
@@ -157,12 +157,12 @@ export class BaseError extends Error {
   constructor(details: ErrorDetails) {
     // Validate error details
     const validatedDetails = ErrorDetailsSchema.parse(details);
-    
+
     super(validatedDetails.message);
-    
+
     // Set error name to class name
     this.name = this.constructor.name;
-    
+
     // Set properties
     this.code = validatedDetails.code;
     this.category = validatedDetails.category;
@@ -228,7 +228,7 @@ export class NetworkError extends BaseError {
       suggestedActions: [
         'Check network connectivity',
         'Verify service endpoint availability',
-        'Retry the operation after a brief delay'
+        'Retry the operation after a brief delay',
       ],
     });
   }
@@ -255,7 +255,7 @@ export class AuthenticationError extends BaseError {
       suggestedActions: [
         'Verify authentication credentials',
         'Check token expiration',
-        'Re-authenticate if necessary'
+        'Re-authenticate if necessary',
       ],
     });
   }
@@ -283,7 +283,7 @@ export class ValidationError extends BaseError {
       suggestedActions: suggestedActions || [
         'Verify input parameters',
         'Check data format requirements',
-        'Review API documentation'
+        'Review API documentation',
       ],
     });
   }
@@ -312,7 +312,7 @@ export class RateLimitError extends BaseError {
       suggestedActions: [
         'Reduce request frequency',
         'Implement exponential backoff',
-        'Consider request batching'
+        'Consider request batching',
       ],
     });
 
@@ -341,7 +341,7 @@ export class ProtocolError extends BaseError {
       suggestedActions: [
         'Check protocol version compatibility',
         'Verify message format',
-        'Review protocol documentation'
+        'Review protocol documentation',
       ],
     });
   }
@@ -368,7 +368,7 @@ export class ConfigurationError extends BaseError {
       suggestedActions: [
         'Check configuration file',
         'Verify required settings',
-        'Review environment variables'
+        'Review environment variables',
       ],
     });
   }
@@ -396,7 +396,7 @@ export class BusinessLogicError extends BaseError {
       suggestedActions: suggestedActions || [
         'Review business rule requirements',
         'Check account status',
-        'Verify operation permissions'
+        'Verify operation permissions',
       ],
     });
   }
@@ -423,7 +423,7 @@ export class SystemError extends BaseError {
       suggestedActions: [
         'Retry the operation',
         'Check system status',
-        'Contact support if problem persists'
+        'Contact support if problem persists',
       ],
     });
   }

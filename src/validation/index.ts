@@ -2,15 +2,12 @@
 export * from './ValidationUtils.js';
 
 // Re-export commonly used types and schemas
-export type {
-  ValidationResult,
-  ValidationContext
-} from './ValidationUtils.js';
+export type { ValidationResult, ValidationContext } from './ValidationUtils.js';
 
 export {
   CommonSchemas,
   HyperLiquidSchemas,
   GlueXSchemas,
   Sanitizers,
-  validationUtils
+  validationUtils,
 } from './ValidationUtils.js';

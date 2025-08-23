@@ -18,7 +18,7 @@ const logFormat = winston.format.combine(
       message,
       ...meta,
     };
-    
+
     return JSON.stringify(logObject);
   })
 );
@@ -33,12 +33,9 @@ export const logger = winston.createLogger({
   transports: [
     // Console transport for all environments
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
     }),
-    
+
     // File transports for production
     ...(config.NODE_ENV === 'production'
       ? [
@@ -56,12 +53,8 @@ export const logger = winston.createLogger({
         ]
       : []),
   ],
-  exceptionHandlers: [
-    new winston.transports.File({ filename: 'logs/exceptions.log' }),
-  ],
-  rejectionHandlers: [
-    new winston.transports.File({ filename: 'logs/rejections.log' }),
-  ],
+  exceptionHandlers: [new winston.transports.File({ filename: 'logs/exceptions.log' })],
+  rejectionHandlers: [new winston.transports.File({ filename: 'logs/rejections.log' })],
   exitOnError: false,
 });
 
@@ -93,7 +86,7 @@ export function logPerformance(
     duration_ms: duration,
     ...meta,
   });
-  
+
   // Warn if operation is slow
   if (duration > 1000) {
     logger.warn('Slow operation detected', {
@@ -106,12 +99,7 @@ export function logPerformance(
 }
 
 // Request/response logging
-export function logRequest(
-  component: string,
-  method: string,
-  url: string,
-  startTime: number
-) {
+export function logRequest(component: string, method: string, url: string, startTime: number) {
   const duration = Date.now() - startTime;
   logger.info('API Request', {
     component,
@@ -187,7 +175,7 @@ export function logToolInvocation(
   error?: string
 ) {
   const duration = Date.now() - startTime;
-  
+
   if (success) {
     logger.info('Tool invocation successful', {
       component: 'TOOL_EXECUTION',

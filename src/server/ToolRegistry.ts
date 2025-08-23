@@ -56,9 +56,7 @@ export class ToolRegistry implements IToolRegistry {
         category,
         errors: validation.errors,
       });
-      throw new Error(
-        `Tool validation failed: ${validation.errors.join(', ')}`
-      );
+      throw new Error(`Tool validation failed: ${validation.errors.join(', ')}`);
     }
 
     // Check for duplicate tool names
@@ -123,8 +121,8 @@ export class ToolRegistry implements IToolRegistry {
       return this.getToolsByCategory(category);
     }
 
-    const allTools = Array.from(this.tools.values()).filter(tool => tool.enabled);
-    
+    const allTools = Array.from(this.tools.values()).filter((tool) => tool.enabled);
+
     logger.debug('Tools retrieved', {
       category: category || 'all',
       count: allTools.length,
@@ -135,7 +133,7 @@ export class ToolRegistry implements IToolRegistry {
 
   getTool(toolId: string): MCPTool | undefined {
     const tool = this.tools.get(toolId);
-    
+
     if (tool) {
       logger.debug('Tool retrieved', {
         tool_name: toolId,
@@ -182,7 +180,9 @@ export class ToolRegistry implements IToolRegistry {
           errors.push('Input schema must be a valid object');
         }
       } catch (error) {
-        errors.push(`Invalid input schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(
+          `Invalid input schema: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     }
 
@@ -196,7 +196,9 @@ export class ToolRegistry implements IToolRegistry {
         if (error instanceof z.ZodError) {
           // Schema is valid if it produces a ZodError (means it's properly structured)
         } else {
-          errors.push(`Invalid Zod schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          errors.push(
+            `Invalid Zod schema: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
         }
       }
     }
@@ -215,7 +217,7 @@ export class ToolRegistry implements IToolRegistry {
 
   listCategories(): string[] {
     const categories = Array.from(this.categorizedTools.keys());
-    
+
     logger.debug('Categories listed', {
       categories,
       count: categories.length,
@@ -232,7 +234,7 @@ export class ToolRegistry implements IToolRegistry {
     }
 
     const tools = Array.from(toolIds)
-      .map(toolId => this.tools.get(toolId))
+      .map((toolId) => this.tools.get(toolId))
       .filter((tool): tool is MCPTool => tool !== undefined && tool.enabled);
 
     logger.debug('Tools retrieved by category', {
@@ -325,7 +327,7 @@ export class ToolRegistry implements IToolRegistry {
     toolsByCategory: Record<string, number>;
   } {
     const totalTools = this.tools.size;
-    const enabledTools = Array.from(this.tools.values()).filter(tool => tool.enabled).length;
+    const enabledTools = Array.from(this.tools.values()).filter((tool) => tool.enabled).length;
     const disabledTools = totalTools - enabledTools;
     const categories = this.categorizedTools.size;
 

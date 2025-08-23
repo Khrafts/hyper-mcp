@@ -56,12 +56,8 @@ export function getConfig(): Config {
     return cachedConfig;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map(
-        (err) => `${err.path.join('.')}: ${err.message}`
-      );
-      throw new Error(
-        `Configuration validation failed:\n${errorMessages.join('\n')}`
-      );
+      const errorMessages = error.errors.map((err) => `${err.path.join('.')}: ${err.message}`);
+      throw new Error(`Configuration validation failed:\n${errorMessages.join('\n')}`);
     }
     throw error;
   }
@@ -73,9 +69,7 @@ export function validateConfig(): { valid: boolean; errors: string[] } {
     return { valid: true, errors: [] };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map(
-        (err) => `${err.path.join('.')}: ${err.message}`
-      );
+      const errors = error.errors.map((err) => `${err.path.join('.')}: ${err.message}`);
       return { valid: false, errors };
     }
     return { valid: false, errors: ['Unknown configuration error'] };

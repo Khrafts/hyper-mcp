@@ -1,14 +1,14 @@
-import { 
-  BaseError, 
-  ErrorCode, 
-  ErrorCategory, 
-  ErrorSeverity, 
+import {
+  BaseError,
+  ErrorCode,
+  ErrorCategory,
+  ErrorSeverity,
   ErrorContext,
   NetworkError,
   AuthenticationError,
   ValidationError,
   RateLimitError,
-  SystemError
+  SystemError,
 } from './ErrorTypes.js';
 import { createComponentLogger, logError } from '../utils/logger.js';
 
@@ -172,7 +172,7 @@ export class ErrorHandler {
     };
 
     this.recoveryStrategies = new Map();
-    
+
     if (this.config.enableGlobalHandler) {
       this.setupGlobalErrorHandlers();
     }
@@ -197,12 +197,12 @@ export class ErrorHandler {
     };
 
     // Initialize category counters
-    Object.values(ErrorCategory).forEach(category => {
+    Object.values(ErrorCategory).forEach((category) => {
       this.metrics.errorsByCategory[category] = 0;
     });
 
     // Initialize severity counters
-    Object.values(ErrorSeverity).forEach(severity => {
+    Object.values(ErrorSeverity).forEach((severity) => {
       this.metrics.errorsBySeverity[severity] = 0;
     });
   }
@@ -228,7 +228,7 @@ export class ErrorHandler {
       });
 
       this.handleError(normalizedError);
-      
+
       // Exit gracefully after logging
       setTimeout(() => process.exit(1), 1000);
     });
@@ -297,10 +297,12 @@ export class ErrorHandler {
     const message = error.message.toLowerCase();
 
     // Network-related errors
-    if (message.includes('network') || 
-        message.includes('connection') || 
-        message.includes('econnrefused') ||
-        message.includes('etimedout')) {
+    if (
+      message.includes('network') ||
+      message.includes('connection') ||
+      message.includes('econnrefused') ||
+      message.includes('etimedout')
+    ) {
       return new NetworkError(
         ErrorCode.NETWORK_CONNECTION_FAILED,
         error.message,
@@ -322,9 +324,11 @@ export class ErrorHandler {
     }
 
     // Authentication errors
-    if (message.includes('unauthorized') || 
-        message.includes('authentication') ||
-        message.includes('401')) {
+    if (
+      message.includes('unauthorized') ||
+      message.includes('authentication') ||
+      message.includes('401')
+    ) {
       return new AuthenticationError(
         ErrorCode.AUTH_UNAUTHORIZED,
         error.message,
@@ -335,9 +339,11 @@ export class ErrorHandler {
     }
 
     // Validation errors
-    if (error.name === 'ValidationError' || 
-        message.includes('validation') ||
-        message.includes('invalid')) {
+    if (
+      error.name === 'ValidationError' ||
+      message.includes('validation') ||
+      message.includes('invalid')
+    ) {
       return new ValidationError(
         ErrorCode.VALIDATION_SCHEMA_ERROR,
         error.message,
@@ -348,9 +354,11 @@ export class ErrorHandler {
     }
 
     // Rate limit errors
-    if (message.includes('rate limit') || 
-        message.includes('429') ||
-        message.includes('too many requests')) {
+    if (
+      message.includes('rate limit') ||
+      message.includes('429') ||
+      message.includes('too many requests')
+    ) {
       return new RateLimitError(
         ErrorCode.RATE_LIMIT_EXCEEDED,
         error.message,
@@ -380,15 +388,15 @@ export class ErrorHandler {
     let lastError: BaseError;
     let attempt = 0;
 
-    while (true) {
+    for (;;) {
       try {
         const result = await operation();
-        
+
         // Log successful recovery if this wasn't the first attempt
         if (attempt > 0) {
           this.metrics.successfulRetries++;
           this.updateAverageRecoveryTime(Date.now() - startTime);
-          
+
           logger.info('Operation recovered successfully', {
             component: context.component,
             operation: context.operation,
@@ -398,18 +406,17 @@ export class ErrorHandler {
         }
 
         return result;
-
       } catch (error) {
         attempt++;
         lastError = this.handleError(error, context);
-        
+
         // Get recovery strategy
         const strategy = this.getRecoveryStrategy(lastError, customStrategy);
-        
+
         // Check if we should retry
         if (!strategy.shouldRetry || attempt > strategy.maxRetries) {
           this.metrics.failedRetries++;
-          
+
           logger.error('Operation failed after retries', {
             component: context.component,
             operation: context.operation,
@@ -433,7 +440,8 @@ export class ErrorHandler {
               component: context.component,
               operation: context.operation,
               attempt,
-              recovery_error: recoveryError instanceof Error ? recoveryError.message : 'Unknown error',
+              recovery_error:
+                recoveryError instanceof Error ? recoveryError.message : 'Unknown error',
             });
             throw lastError;
           }
@@ -456,14 +464,14 @@ export class ErrorHandler {
         });
 
         // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
       }
     }
   }
 
   // Get recovery strategy for an error
   private getRecoveryStrategy(
-    error: BaseError, 
+    error: BaseError,
     customStrategy?: Partial<ErrorRecoveryStrategy>
   ): ErrorRecoveryStrategy {
     // Check for error-specific strategy
@@ -485,7 +493,7 @@ export class ErrorHandler {
   // Register custom recovery strategy
   registerRecoveryStrategy(errorCode: ErrorCode, strategy: ErrorRecoveryStrategy): void {
     this.recoveryStrategies.set(errorCode, strategy);
-    
+
     logger.debug('Recovery strategy registered', {
       error_code: errorCode,
       should_retry: strategy.shouldRetry,
@@ -505,9 +513,9 @@ export class ErrorHandler {
   private updateAverageRecoveryTime(recoveryTime: number): void {
     const totalRecoveries = this.metrics.successfulRetries;
     const currentAverage = this.metrics.averageRecoveryTime;
-    
-    this.metrics.averageRecoveryTime = 
-      ((currentAverage * (totalRecoveries - 1)) + recoveryTime) / totalRecoveries;
+
+    this.metrics.averageRecoveryTime =
+      (currentAverage * (totalRecoveries - 1) + recoveryTime) / totalRecoveries;
   }
 
   // Log error with appropriate level
@@ -554,9 +562,10 @@ export class ErrorHandler {
   getHealthStatus(): { healthy: boolean; details: Record<string, unknown> } {
     const errorRate = this.metrics.totalErrors / Math.max(1, Date.now() - 3600000); // errors per hour
     const criticalErrors = this.metrics.errorsBySeverity[ErrorSeverity.CRITICAL] || 0;
-    const retrySuccessRate = this.metrics.retryAttempts > 0 
-      ? this.metrics.successfulRetries / this.metrics.retryAttempts 
-      : 1;
+    const retrySuccessRate =
+      this.metrics.retryAttempts > 0
+        ? this.metrics.successfulRetries / this.metrics.retryAttempts
+        : 1;
 
     const healthy = errorRate < 100 && criticalErrors < 10 && retrySuccessRate > 0.5;
 

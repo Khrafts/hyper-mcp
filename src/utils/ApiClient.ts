@@ -73,7 +73,7 @@ class CircuitBreaker {
     if (this.failures >= this.config.failureThreshold) {
       this.state = 'OPEN';
       this.nextAttemptTime = Date.now() + this.config.resetTimeoutMs;
-      
+
       logger.warn('Circuit breaker opened', {
         failures: this.failures,
         threshold: this.config.failureThreshold,
@@ -100,7 +100,7 @@ export class ApiClient {
   constructor(component: string, config: ApiClientConfig) {
     this.component = component;
     this.rateLimiter = new RateLimiter(config.rateLimit);
-    
+
     // Circuit breaker with 50% failure threshold as specified
     this.circuitBreaker = new CircuitBreaker({
       failureThreshold: Math.ceil(config.retries.maxRetries * 0.5),
@@ -141,7 +141,7 @@ export class ApiClient {
   ): Promise<T> {
     const startTime = Date.now();
     const url = `${config.baseURL || this.client.defaults.baseURL}${config.url}`;
-    
+
     // Check rate limits
     await this.rateLimiter.waitForAvailable(this.component);
 
@@ -163,9 +163,9 @@ export class ApiClient {
     for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
       try {
         logRequest(this.component, config.method?.toUpperCase() || 'GET', url, startTime);
-        
+
         const response: AxiosResponse<T> = await this.client.request(config);
-        
+
         logResponse(
           this.component,
           config.method?.toUpperCase() || 'GET',
@@ -180,13 +180,12 @@ export class ApiClient {
         }
 
         return response.data;
-
       } catch (error) {
         const axiosError = error as AxiosError;
         lastError = axiosError;
 
         const shouldRetry = this.shouldRetry(axiosError, attempt, retryConfig);
-        
+
         logError(this.component, axiosError, {
           attempt: attempt + 1,
           max_attempts: retryConfig.maxRetries + 1,
@@ -206,8 +205,8 @@ export class ApiClient {
             delay_ms: delay,
             url,
           });
-          
-          await new Promise(resolve => setTimeout(resolve, delay));
+
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
@@ -232,7 +231,7 @@ export class ApiClient {
 
     // Check error messages
     const errorMessage = error.message.toLowerCase();
-    return config.retryableErrors.some(retryableError => 
+    return config.retryableErrors.some((retryableError) =>
       errorMessage.includes(retryableError.toLowerCase())
     );
   }
@@ -249,7 +248,14 @@ export class ApiClient {
       baseDelay: 1000,
       maxDelay: 30000,
       backoffMultiplier: 2,
-      retryableErrors: ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'RATE_LIMIT', 'TIMEOUT', 'NETWORK_ERROR'],
+      retryableErrors: [
+        'ECONNRESET',
+        'ETIMEDOUT',
+        'ECONNREFUSED',
+        'RATE_LIMIT',
+        'TIMEOUT',
+        'NETWORK_ERROR',
+      ],
       retryableStatusCodes: [408, 429, 502, 503, 504],
     };
   }
@@ -274,11 +280,11 @@ export class ApiClient {
   // Health check
   async healthCheck(): Promise<{ healthy: boolean; latencyMs?: number; error?: string }> {
     const startTime = Date.now();
-    
+
     try {
       await this.get('/health', { timeout: 5000 });
       const latencyMs = Date.now() - startTime;
-      
+
       return { healthy: true, latencyMs };
     } catch (error) {
       return {

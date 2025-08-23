@@ -75,7 +75,6 @@ async function main() {
 
     // Keep process running
     logger.info('Server is running. Press Ctrl+C to stop.');
-
   } catch (error) {
     logger.error('Failed to start server', {
       error: error instanceof Error ? error.message : String(error),

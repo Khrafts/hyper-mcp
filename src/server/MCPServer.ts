@@ -85,7 +85,7 @@ export class MCPServer implements IMCPServer {
 
       try {
         const tools = this._toolRegistry.getTools();
-        const mcpTools: Tool[] = tools.map(tool => ({
+        const mcpTools: Tool[] = tools.map((tool) => ({
           name: tool.name,
           description: tool.description,
           inputSchema: tool.inputSchema,
@@ -128,9 +128,9 @@ export class MCPServer implements IMCPServer {
             tool_name: toolName,
             session_id: sessionId,
           });
-          
+
           logToolInvocation(toolName, sessionId, startTime, false, error);
-          
+
           return {
             content: [
               {
@@ -198,7 +198,7 @@ export class MCPServer implements IMCPServer {
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        
+
         logger.error('Tool execution failed', {
           tool_name: toolName,
           session_id: sessionId,
@@ -260,7 +260,6 @@ export class MCPServer implements IMCPServer {
       logger.info('MCP Server ready to accept connections', {
         registered_tools: this.toolRegistry.getStatistics().totalTools,
       });
-
     } catch (error) {
       logger.error('Failed to start MCP Server', {
         error: error instanceof Error ? error.message : String(error),
@@ -294,7 +293,6 @@ export class MCPServer implements IMCPServer {
         shutdown_duration_ms: shutdownDuration,
         total_uptime_ms: totalUptime,
       });
-
     } catch (error) {
       logger.error('Error stopping MCP Server', {
         error: error instanceof Error ? error.message : String(error),
@@ -306,7 +304,7 @@ export class MCPServer implements IMCPServer {
   registerTool(tool: MCPTool): void {
     try {
       this._toolRegistry.register(tool.category, tool);
-      
+
       logger.info('Tool registered with MCP Server', {
         tool_name: tool.name,
         category: tool.category,
@@ -324,11 +322,11 @@ export class MCPServer implements IMCPServer {
 
   async handleRequest(request: MCPRequest): Promise<MCPResponse> {
     const startTime = Date.now();
-    
+
     logMCPMessage('incoming', request.method, request.sessionId);
 
     try {
-      // This is a simplified handler - the actual MCP protocol handling 
+      // This is a simplified handler - the actual MCP protocol handling
       // is done by the @modelcontextprotocol/sdk Server class
       // This method is primarily for custom request handling if needed
 

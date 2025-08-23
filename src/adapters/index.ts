@@ -9,12 +9,12 @@ export type {
   AdapterStatistics,
   AdapterConfig,
   ConnectionOptions,
-  RequestContext
+  RequestContext,
 } from './BaseAdapter.js';
 
 export type {
   AdapterRegistryEntry,
   AdapterFilter,
   AdapterRegistryStatistics,
-  IAdapterRegistry
+  IAdapterRegistry,
 } from './AdapterRegistry.js';

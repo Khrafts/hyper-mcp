@@ -64,15 +64,15 @@ export class RateLimiter {
 
   async waitForAvailable(key: string, config?: Partial<RateLimitConfig>): Promise<void> {
     const result = await this.checkLimit(key, config);
-    
+
     if (!result.allowed && result.retryAfterMs) {
       logger.debug('Waiting for rate limit availability', {
         key,
         wait_ms: result.retryAfterMs,
       });
-      
-      await new Promise(resolve => setTimeout(resolve, result.retryAfterMs));
-      
+
+      await new Promise((resolve) => setTimeout(resolve, result.retryAfterMs));
+
       // Recursively check again after waiting
       return this.waitForAvailable(key, config);
     }
@@ -80,7 +80,7 @@ export class RateLimiter {
 
   private getOrCreateBucket(key: string, config: Required<RateLimitConfig>): TokenBucket {
     let bucket = this.buckets.get(key);
-    
+
     if (!bucket) {
       bucket = {
         tokens: config.burstLimit,
@@ -88,9 +88,9 @@ export class RateLimiter {
         capacity: config.burstLimit,
         refillRate: config.requestsPerMinute / (config.timeWindowMs / 1000), // tokens per second
       };
-      
+
       this.buckets.set(key, bucket);
-      
+
       logger.debug('Token bucket created', {
         key,
         initial_tokens: bucket.tokens,
@@ -98,7 +98,7 @@ export class RateLimiter {
         refill_rate: bucket.refillRate,
       });
     }
-    
+
     return bucket;
   }
 
@@ -106,11 +106,11 @@ export class RateLimiter {
     const now = Date.now();
     const timePassed = (now - bucket.lastRefill) / 1000; // seconds
     const tokensToAdd = Math.floor(timePassed * bucket.refillRate);
-    
+
     if (tokensToAdd > 0) {
       bucket.tokens = Math.min(bucket.capacity, bucket.tokens + tokensToAdd);
       bucket.lastRefill = now;
-      
+
       logger.debug('Token bucket refilled', {
         tokens_added: tokensToAdd,
         current_tokens: bucket.tokens,
@@ -133,7 +133,7 @@ export class RateLimiter {
     lastRefill?: number;
   } {
     const bucket = this.buckets.get(key);
-    
+
     if (!bucket) {
       return { exists: false };
     }
@@ -150,7 +150,8 @@ export class RateLimiter {
   }
 
   // Clear old buckets to prevent memory leaks
-  cleanup(maxAgeMs: number = 24 * 60 * 60 * 1000): void { // 24 hours default
+  cleanup(maxAgeMs: number = 24 * 60 * 60 * 1000): void {
+    // 24 hours default
     const now = Date.now();
     const keysToDelete: string[] = [];
 
@@ -186,7 +187,7 @@ export class RateLimiter {
       if (bucket.tokens > 0) {
         bucketsWithTokens++;
       }
-      
+
       const age = now - bucket.lastRefill;
       if (oldestBucketAge === null || age > oldestBucketAge) {
         oldestBucketAge = age;

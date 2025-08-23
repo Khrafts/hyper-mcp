@@ -39,13 +39,17 @@ export class SessionManager implements ISessionManager {
   private cleanupInterval: NodeJS.Timeout;
   private readonly sessionTimeoutMs: number;
 
-  constructor(sessionTimeoutMs: number = 30 * 60 * 1000) { // 30 minutes default
+  constructor(sessionTimeoutMs: number = 30 * 60 * 1000) {
+    // 30 minutes default
     this.sessionTimeoutMs = sessionTimeoutMs;
-    
+
     // Start cleanup interval every 5 minutes
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupExpiredSessions();
-    }, 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanupExpiredSessions();
+      },
+      5 * 60 * 1000
+    );
 
     logger.info('SessionManager initialized', {
       session_timeout_ms: this.sessionTimeoutMs,
@@ -79,7 +83,7 @@ export class SessionManager implements ISessionManager {
 
   getSession(sessionId: string): Session | null {
     const session = this.sessions.get(sessionId);
-    
+
     if (!session) {
       logger.debug('Session not found', { session_id: sessionId });
       return null;
@@ -107,7 +111,7 @@ export class SessionManager implements ISessionManager {
 
   updateSession(sessionId: string, data: Partial<Session>): void {
     const session = this.sessions.get(sessionId);
-    
+
     if (!session) {
       logger.warn('Attempted to update non-existent session', {
         session_id: sessionId,
@@ -116,6 +120,7 @@ export class SessionManager implements ISessionManager {
     }
 
     // Don't allow updating certain protected fields
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id, clientId, createdAt, ...updateData } = data;
 
     Object.assign(session, updateData);
@@ -129,7 +134,7 @@ export class SessionManager implements ISessionManager {
 
   async closeSession(sessionId: string): Promise<void> {
     const session = this.sessions.get(sessionId);
-    
+
     if (!session) {
       logger.debug('Session not found for closing', { session_id: sessionId });
       return;
@@ -154,8 +159,7 @@ export class SessionManager implements ISessionManager {
   listActiveSessions(): Session[] {
     const now = Date.now();
     const activeSessions = Array.from(this.sessions.values()).filter(
-      (session) =>
-        session.isActive && now - session.lastActivity <= this.sessionTimeoutMs
+      (session) => session.isActive && now - session.lastActivity <= this.sessionTimeoutMs
     );
 
     logger.debug('Active sessions listed', {
@@ -195,9 +199,7 @@ export class SessionManager implements ISessionManager {
 
     // Close all active sessions
     const activeSessions = this.listActiveSessions();
-    await Promise.all(
-      activeSessions.map((session) => this.closeSession(session.id))
-    );
+    await Promise.all(activeSessions.map((session) => this.closeSession(session.id)));
 
     this.sessions.clear();
 
@@ -213,12 +215,10 @@ export class SessionManager implements ISessionManager {
   } {
     const now = Date.now();
     const activeSessions = this.listActiveSessions();
-    
+
     let oldestSessionAge: number | null = null;
     if (activeSessions.length > 0) {
-      oldestSessionAge = Math.min(
-        ...activeSessions.map((session) => now - session.createdAt)
-      );
+      oldestSessionAge = Math.min(...activeSessions.map((session) => now - session.createdAt));
     }
 
     const healthy = this.sessions.size < 1000; // Consider unhealthy if too many sessions
@@ -244,10 +244,8 @@ export class SessionManager implements ISessionManager {
 
     const averageSessionDuration =
       activeSessions.length > 0
-        ? activeSessions.reduce(
-            (sum, session) => sum + (now - session.createdAt),
-            0
-          ) / activeSessions.length
+        ? activeSessions.reduce((sum, session) => sum + (now - session.createdAt), 0) /
+          activeSessions.length
         : 0;
 
     const sessionsCreatedLastHour = Array.from(this.sessions.values()).filter(
