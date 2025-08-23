@@ -1,2 +1,2 @@
 // Jest setup file for global test configuration
-import 'dotenv/config';
+require('dotenv/config');

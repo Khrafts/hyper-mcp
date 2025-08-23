@@ -22,10 +22,12 @@ export default {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       tsconfig: {
+        module: 'commonjs',
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
       },
@@ -33,10 +35,4 @@ export default {
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   verbose: true,
-  extensionsToTreatAsEsm: ['.ts'],
-  globals: {
-    'ts-jest': {
-      useESM: true,
-    },
-  },
 };
