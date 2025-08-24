@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist coverage",
     "prepare": "husky",
-    "pre-commit": "lint-staged && pnpm test"
+    "pre-commit": "lint-staged && pnpm run build && pnpm test"
   },
   "keywords": [
     "mcp",

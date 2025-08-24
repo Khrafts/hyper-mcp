@@ -6,6 +6,13 @@ import { SimpleHyperLiquidTools } from '../tools/SimpleHyperLiquidTools.js';
 import { SimpleGlueXAdapter, SimpleGlueXConfig } from '../adapters/gluex/SimpleGlueXAdapter.js';
 import { SimpleGlueXTools } from '../tools/SimpleGlueXTools.js';
 import { MarketIntelligenceTools } from '../tools/MarketIntelligenceTools.js';
+import { ExecutionEngine } from '../execution/ExecutionEngine.js';
+import { ExecutionTools } from '../tools/ExecutionTools.js';
+import { RiskManagementEngine } from '../risk/RiskManagementEngine.js';
+import { RiskManagementTools } from '../tools/RiskManagementTools.js';
+import { HyperLiquidNodeInfoAdapter } from '../adapters/hyperliquid/HyperLiquidNodeInfoAdapter.js';
+import { NodeInfoTools } from '../tools/NodeInfoTools.js';
+import { MarketIntelligence } from '../analytics/MarketIntelligence.js';
 import { createComponentLogger } from '../utils/logger.js';
 import { getConfig, createConfigSections } from '../config/index.js';
 import { ToolRegistry } from './ToolRegistry.js';
@@ -25,6 +32,13 @@ export class SimpleAdapterManager {
   private glueXAdapter?: SimpleGlueXAdapter;
   private glueXTools?: SimpleGlueXTools;
   private marketIntelligenceTools?: MarketIntelligenceTools;
+  private marketIntelligence?: MarketIntelligence;
+  private executionEngine?: ExecutionEngine;
+  private executionTools?: ExecutionTools;
+  private riskEngine?: RiskManagementEngine;
+  private riskTools?: RiskManagementTools;
+  private nodeInfoAdapter?: HyperLiquidNodeInfoAdapter;
+  private nodeInfoTools?: NodeInfoTools;
   private toolRegistry: ToolRegistry;
   private config: SimpleAdapterManagerConfig;
 
@@ -84,13 +98,31 @@ export class SimpleAdapterManager {
       this.hyperLiquidAdapter = new SimpleHyperLiquidAdapter(adapterConfig);
       await this.hyperLiquidAdapter.connect();
 
+      // Initialize node info adapter
+      this.nodeInfoAdapter = new HyperLiquidNodeInfoAdapter({
+        name: 'hyperliquid-node-info',
+        baseUrl: sections.hyperliquid.apiBaseUrl + '/info',
+        timeout: sections.rateLimiting.apiTimeoutMs,
+      });
+
+      // Initialize market intelligence and advanced engines
+      this.marketIntelligence = new MarketIntelligence(this.hyperLiquidAdapter);
+      this.executionEngine = new ExecutionEngine(this.hyperLiquidAdapter);
+      this.riskEngine = new RiskManagementEngine(this.hyperLiquidAdapter);
+
       // Initialize tools
       this.hyperLiquidTools = new SimpleHyperLiquidTools(this.hyperLiquidAdapter);
       this.marketIntelligenceTools = new MarketIntelligenceTools(this.hyperLiquidAdapter);
+      this.executionTools = new ExecutionTools(this.executionEngine);
+      this.riskTools = new RiskManagementTools(this.riskEngine);
+      this.nodeInfoTools = new NodeInfoTools(this.nodeInfoAdapter);
 
       // Register all tools
       this.registerHyperLiquidTools();
       this.registerMarketIntelligenceTools();
+      this.registerExecutionTools();
+      this.registerRiskManagementTools();
+      this.registerNodeInfoTools();
 
       logger.info('HyperLiquid adapter initialized successfully', {
         metadata: this.hyperLiquidAdapter.getMetadata(),
@@ -223,14 +255,119 @@ export class SimpleAdapterManager {
     });
   }
 
+  private registerExecutionTools(): void {
+    if (!this.executionTools) {
+      throw new Error('Execution tools not initialized');
+    }
+
+    const toolDefinitions = this.executionTools.getToolDefinitions();
+
+    for (const toolDef of toolDefinitions) {
+      this.toolRegistry.register('execution', {
+        name: toolDef.name,
+        description: toolDef.description,
+        category: 'execution',
+        version: '1.0.0',
+        enabled: true,
+        inputSchema: toolDef.inputSchema,
+        handler: async (args: unknown): Promise<CallToolResult> => {
+          return await this.executionTools!.handleToolCall(toolDef.name, args);
+        },
+      });
+
+      logger.debug('Registered Execution tool', {
+        tool_name: toolDef.name,
+        description: toolDef.description,
+      });
+    }
+
+    logger.info('Execution tools registered', {
+      tool_count: toolDefinitions.length,
+    });
+  }
+
+  private registerRiskManagementTools(): void {
+    if (!this.riskTools) {
+      throw new Error('Risk management tools not initialized');
+    }
+
+    const toolDefinitions = this.riskTools.getToolDefinitions();
+
+    for (const toolDef of toolDefinitions) {
+      this.toolRegistry.register('risk_management', {
+        name: toolDef.name,
+        description: toolDef.description,
+        category: 'risk_management',
+        version: '1.0.0',
+        enabled: true,
+        inputSchema: toolDef.inputSchema,
+        handler: async (args: unknown): Promise<CallToolResult> => {
+          return await this.riskTools!.handleToolCall(toolDef.name, args);
+        },
+      });
+
+      logger.debug('Registered Risk Management tool', {
+        tool_name: toolDef.name,
+        description: toolDef.description,
+      });
+    }
+
+    logger.info('Risk Management tools registered', {
+      tool_count: toolDefinitions.length,
+    });
+  }
+
+  private registerNodeInfoTools(): void {
+    if (!this.nodeInfoTools) {
+      throw new Error('Node info tools not initialized');
+    }
+
+    const toolDefinitions = this.nodeInfoTools.getToolDefinitions();
+
+    for (const toolDef of toolDefinitions) {
+      this.toolRegistry.register('node_info', {
+        name: toolDef.name,
+        description: toolDef.description,
+        category: 'node_info',
+        version: '1.0.0',
+        enabled: true,
+        inputSchema: toolDef.inputSchema,
+        handler: async (args: unknown): Promise<CallToolResult> => {
+          return await this.nodeInfoTools!.handleToolCall(toolDef.name, args);
+        },
+      });
+
+      logger.debug('Registered Node Info tool', {
+        tool_name: toolDef.name,
+        description: toolDef.description,
+      });
+    }
+
+    logger.info('Node Info tools registered', {
+      tool_count: toolDefinitions.length,
+    });
+  }
+
   async cleanup(): Promise<void> {
     try {
+      if (this.executionEngine) {
+        await this.executionEngine.stop();
+      }
+
+      if (this.riskEngine) {
+        await this.riskEngine.stop();
+      }
+
       if (this.hyperLiquidAdapter) {
         await this.hyperLiquidAdapter.disconnect();
       }
 
       if (this.glueXAdapter) {
         await this.glueXAdapter.disconnect();
+      }
+
+      if (this.nodeInfoAdapter) {
+        await this.nodeInfoAdapter.disconnect();
       }
 
       logger.info('SimpleAdapterManager cleanup completed');
@@ -338,5 +475,29 @@ export class SimpleAdapterManager {
 
   getMarketIntelligenceTools(): MarketIntelligenceTools | undefined {
     return this.marketIntelligenceTools;
+  }
+
+  getExecutionEngine(): ExecutionEngine | undefined {
+    return this.executionEngine;
+  }
+
+  getExecutionTools(): ExecutionTools | undefined {
+    return this.executionTools;
+  }
+
+  getRiskEngine(): RiskManagementEngine | undefined {
+    return this.riskEngine;
+  }
+
+  getRiskTools(): RiskManagementTools | undefined {
+    return this.riskTools;
+  }
+
+  getNodeInfoAdapter(): HyperLiquidNodeInfoAdapter | undefined {
+    return this.nodeInfoAdapter;
+  }
+
+  getNodeInfoTools(): NodeInfoTools | undefined {
+    return this.nodeInfoTools;
   }
 }
