@@ -86,6 +86,7 @@ export class RiskManagementEngine extends EventEmitter {
   private priceHistory: Map<string, number[]> = new Map();
   private returns: Map<string, number[]> = new Map();
   private isActive = false;
+  private monitoringInterval?: NodeJS.Timeout;
 
   constructor(adapter: SimpleHyperLiquidAdapter, riskLimits?: Partial<RiskLimits>) {
     super();
@@ -116,13 +117,17 @@ export class RiskManagementEngine extends EventEmitter {
 
   async stop(): Promise<void> {
     this.isActive = false;
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.monitoringInterval = undefined;
+    }
     logger.info('Risk management engine stopped');
   }
 
   private startRiskMonitoring(): void {
     if (!this.isActive) return;
 
-    setInterval(async () => {
+    this.monitoringInterval = setInterval(async () => {
       if (!this.isActive) return;
 
       try {
@@ -284,7 +289,7 @@ export class RiskManagementEngine extends EventEmitter {
       entryPrice: position.entryPrice,
       currentPrice,
       leverage: position.leverage || 1,
-      unrealizedPnl: (currentPrice - position.entryPrice) * position.size,
+      unrealizedPnl: position.unrealizedPnl || (currentPrice - position.entryPrice) * position.size,
       riskScore: this.calculateRiskScore(position, var95),
       var95: Math.abs(var95),
       var99: Math.abs(var99),

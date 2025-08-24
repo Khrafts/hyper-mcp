@@ -95,6 +95,10 @@ describe('RiskManagementEngine Comprehensive Tests', () => {
   });
 
   describe('Portfolio Risk Calculation', () => {
+    beforeEach(async () => {
+      await riskEngine.start();
+    });
+
     it('should calculate portfolio risk correctly', async () => {
       const portfolioRisk = await riskEngine.calculatePortfolioRisk();
 
