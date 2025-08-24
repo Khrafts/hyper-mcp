@@ -256,7 +256,7 @@ export class RiskManagementEngine extends EventEmitter {
   }
 
   private async calculatePositionRisk(position: any, currentPrices: Record<string, string>): Promise<PositionRisk> {
-    const currentPrice = parseFloat(currentPrices[position.symbol]) || position.entryPrice;
+    const currentPrice = parseFloat(currentPrices[position.symbol] || '0') || position.entryPrice;
     const positionValue = Math.abs(position.size * currentPrice);
     
     const returns = this.returns.get(position.symbol) || [];
@@ -383,8 +383,8 @@ export class RiskManagementEngine extends EventEmitter {
     let variance2 = 0;
 
     for (let i = 0; i < n; i++) {
-      const diff1 = returns1[i] - mean1;
-      const diff2 = returns2[i] - mean2;
+      const diff1 = returns1[i]! - mean1;
+      const diff2 = returns2[i]! - mean2;
       covariance += diff1 * diff2;
       variance1 += diff1 * diff1;
       variance2 += diff2 * diff2;
@@ -482,22 +482,22 @@ export class RiskManagementEngine extends EventEmitter {
 
   private async getCurrentPrice(symbol: string): Promise<number> {
     const prices = await this.adapter.getAllMids();
-    return parseFloat(prices[symbol]) || 0;
+    return parseFloat(prices[symbol] || '0') || 0;
   }
 
-  private async simulateOrderVaR(symbol: string, side: 'buy' | 'sell', quantity: number, price?: number): Promise<number> {
+  private async simulateOrderVaR(_symbol: string, _side: 'buy' | 'sell', quantity: number, price?: number): Promise<number> {
     // Simplified simulation - would need more sophisticated modeling
     const currentPortfolio = await this.calculatePortfolioRisk();
-    const orderValue = quantity * (price || await this.getCurrentPrice(symbol));
+    const orderValue = quantity * (price || await this.getCurrentPrice(_symbol));
     const orderVaR = orderValue * 0.02; // Simplified 2% VaR for new orders
     
     return currentPortfolio.portfolioVar95 + orderVaR;
   }
 
-  private calculateLiquidationRisk(symbol: string, size: number, price?: number): number {
+  private calculateLiquidationRisk(_symbol: string, _size: number, _price?: number): number {
     // Simplified liquidation risk calculation
     // Would need margin requirements and account equity in reality
-    return Math.min(Math.abs(size) * 0.01, 1); // Max 1% liquidation risk
+    return Math.min(Math.abs(_size) * 0.01, 1); // Max 1% liquidation risk
   }
 
   private calculateRiskScore(position: any, var95: number): number {
@@ -510,21 +510,71 @@ export class RiskManagementEngine extends EventEmitter {
   }
 
   private parsePositions(accountState: unknown): any[] {
-    // Mock data - would parse actual account state
-    return [
-      {
-        symbol: 'BTC',
-        size: 1.5,
-        entryPrice: 45000,
-        leverage: 2,
-      },
-      {
-        symbol: 'ETH',
-        size: 10,
-        entryPrice: 3000,
-        leverage: 1,
-      },
-    ];
+    // Parse actual HyperLiquid account state for position data
+    if (!accountState || typeof accountState !== 'object') {
+      logger.warn('Invalid account state format for position parsing', { 
+        type: typeof accountState,
+        isNull: accountState === null 
+      });
+      return [];
+    }
+
+    const state = accountState as any;
+
+    try {
+      // Handle different possible response formats
+      let clearinghouseState;
+      if (Array.isArray(state) && state.length > 0) {
+        // Subaccount array format
+        clearinghouseState = state[0]?.clearinghouseState;
+      } else if (state.clearinghouseState) {
+        // Direct clearinghouse state
+        clearinghouseState = state.clearinghouseState;
+      } else {
+        // Already in clearinghouse format
+        clearinghouseState = state;
+      }
+
+      if (!clearinghouseState?.assetPositions) {
+        logger.debug('No asset positions found in account state');
+        return [];
+      }
+
+      const positions = clearinghouseState.assetPositions.map((position: any, index: number) => {
+        try {
+          const symbol = position.coin || position.symbol || `UNKNOWN_${index}`;
+          const size = parseFloat(position.szi || position.size || '0');
+          const entryPrice = parseFloat(position.entryPx || position.entryPrice || '0');
+          
+          // Calculate leverage from position size and margin used
+          const marginUsed = parseFloat(position.marginUsed || '0');
+          const positionValue = Math.abs(size * entryPrice);
+          const leverage = marginUsed > 0 ? positionValue / marginUsed : 1;
+
+          return {
+            symbol,
+            size,
+            entryPrice,
+            leverage: Math.max(1, Math.min(leverage, this.riskLimits.maxLeverage)), // Clamp leverage
+            unrealizedPnl: parseFloat(position.unrealizedPnl || '0'),
+            marginUsed,
+          };
+        } catch (error) {
+          logger.warn('Failed to parse individual position', { index, error });
+          return null;
+        }
+      }).filter((position: any) => position !== null && position.size !== 0);
+
+      logger.info('Positions parsed from account state', {
+        totalPositions: positions.length,
+        symbols: positions.map((p: any) => p.symbol),
+      });
+
+      return positions;
+    } catch (error) {
+      logger.error('Failed to parse positions from HyperLiquid account state', { error });
+      return [];
+    }
   }
 
   private getPortfolioReturns(positions: PositionRisk[]): number[] {
@@ -540,7 +590,7 @@ export class RiskManagementEngine extends EventEmitter {
         const positionReturns = this.returns.get(pos.symbol) || [];
         if (positionReturns[i]) {
           const weight = Math.abs(pos.size * pos.currentPrice) / totalValue;
-          portfolioReturn += positionReturns[i] * weight;
+          portfolioReturn += positionReturns[i]! * weight;
         }
       });
       if (portfolioReturn !== 0) returns.push(portfolioReturn);
@@ -565,7 +615,7 @@ export class RiskManagementEngine extends EventEmitter {
         // Calculate returns
         if (history.length > 1) {
           const returns = this.returns.get(symbol) || [];
-          const returnValue = (price - history[history.length - 2]) / history[history.length - 2];
+          const returnValue = (price - history[history.length - 2]!) / history[history.length - 2]!;
           returns.push(returnValue);
           
           // Keep last 100 returns

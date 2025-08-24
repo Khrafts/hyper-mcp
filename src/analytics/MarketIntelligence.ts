@@ -290,69 +290,151 @@ export class MarketIntelligence {
   }
 
   private parseCandleData(candleData: unknown): CandleData[] {
-    // This would need to be implemented based on actual HyperLiquid API response format
-    // For now, return mock data structure
+    // Parse actual HyperLiquid API candle response format
     if (!Array.isArray(candleData)) {
-      logger.warn('Unexpected candle data format, using mock data');
-      return this.generateMockCandles();
+      logger.error('Invalid candle data format - expected array', { 
+        type: typeof candleData,
+        isArray: Array.isArray(candleData) 
+      });
+      throw new Error('Invalid candle data format from HyperLiquid API');
+    }
+
+    if (candleData.length === 0) {
+      logger.warn('Empty candle data received from API');
+      return [];
     }
 
     try {
-      return candleData.map((candle: any) => ({
-        timestamp: candle[0] || Date.now(),
-        open: parseFloat(candle[1]) || 0,
-        high: parseFloat(candle[2]) || 0,
-        low: parseFloat(candle[3]) || 0,
-        close: parseFloat(candle[4]) || 0,
-        volume: parseFloat(candle[5]) || 0,
-      }));
+      // HyperLiquid candle format: { T, c, h, i, l, n, o, s, t, v }
+      return candleData.map((candle: any, index: number) => {
+        if (!candle || typeof candle !== 'object') {
+          throw new Error(`Invalid candle object at index ${index}`);
+        }
+
+        const parsed = {
+          timestamp: parseInt(candle.T) || parseInt(candle.t) || Date.now(),
+          open: parseFloat(candle.o) || 0,
+          high: parseFloat(candle.h) || 0,
+          low: parseFloat(candle.l) || 0,
+          close: parseFloat(candle.c) || 0,
+          volume: parseFloat(candle.v) || 0,
+        };
+
+        // Validate parsed candle data
+        if (parsed.high < parsed.low || parsed.open <= 0 || parsed.close <= 0) {
+          logger.warn('Invalid candle price data detected', { 
+            index, 
+            candle: parsed,
+            symbol: candle.s 
+          });
+        }
+
+        return parsed;
+      }).filter(candle => candle.open > 0 && candle.close > 0); // Filter out invalid candles
     } catch (error) {
-      logger.warn('Error parsing candle data, using mock data', { error });
-      return this.generateMockCandles();
+      logger.error('Failed to parse candle data from HyperLiquid API', { error });
+      throw new Error(`Candle data parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  private generateMockCandles(): CandleData[] {
-    const candles: CandleData[] = [];
-    const basePrice = 50000;
-    const now = Date.now();
 
-    for (let i = 0; i < 100; i++) {
-      const timestamp = now - (100 - i) * 3600000; // 1 hour intervals
-      const price = basePrice + (Math.random() - 0.5) * 1000 + Math.sin(i / 10) * 2000;
-      const volatility = Math.random() * 500;
-
-      candles.push({
-        timestamp,
-        open: price,
-        high: price + Math.random() * volatility,
-        low: price - Math.random() * volatility,
-        close: price + (Math.random() - 0.5) * volatility,
-        volume: Math.random() * 1000000,
+  private parseAccountState(accountState: unknown): any {
+    // Parse actual HyperLiquid account state response format
+    if (!accountState || typeof accountState !== 'object') {
+      logger.error('Invalid account state format', { 
+        type: typeof accountState,
+        isNull: accountState === null 
       });
+      throw new Error('Invalid account state data from HyperLiquid API');
     }
 
-    return candles;
-  }
+    const state = accountState as any;
 
-  private parseAccountState(_accountState: unknown): any {
-    // This would parse the actual HyperLiquid account state format
-    // Return mock data for now
-    return {
-      totalValue: 100000,
-      unrealizedPnl: 5000,
-      realizedPnl: 2000,
-      positions: [
-        {
-          symbol: 'BTC',
-          size: 1.5,
-          entryPrice: 45000,
-          currentPrice: 47000,
-          unrealizedPnl: 3000,
-          pnlPercent: 4.44,
+    // Handle different possible response formats
+    let clearinghouseState;
+    if (Array.isArray(state) && state.length > 0) {
+      // Subaccount array format
+      clearinghouseState = state[0]?.clearinghouseState;
+    } else if (state.clearinghouseState) {
+      // Direct clearinghouse state
+      clearinghouseState = state.clearinghouseState;
+    } else {
+      // Already in clearinghouse format
+      clearinghouseState = state;
+    }
+
+    if (!clearinghouseState) {
+      logger.error('Missing clearinghouse state in account data');
+      throw new Error('Missing clearinghouse state in HyperLiquid account response');
+    }
+
+    try {
+      const marginSummary = clearinghouseState.marginSummary || {};
+      const assetPositions = clearinghouseState.assetPositions || [];
+
+      // Calculate total portfolio value
+      const totalValue = parseFloat(marginSummary.accountValue || '0');
+      const totalRawUsd = parseFloat(marginSummary.totalRawUsd || '0');
+      const withdrawable = parseFloat(clearinghouseState.withdrawable || '0');
+
+      // Parse positions
+      const positions = assetPositions.map((position: any, index: number) => {
+        const symbol = position.coin || position.symbol || `UNKNOWN_${index}`;
+        const positionSize = parseFloat(position.szi || position.size || '0');
+        const entryPrice = parseFloat(position.entryPx || position.entryPrice || '0');
+        const unrealizedPnl = parseFloat(position.unrealizedPnl || '0');
+        
+        // Calculate current price from unrealized PnL if available
+        let currentPrice = entryPrice;
+        if (positionSize !== 0 && unrealizedPnl !== 0) {
+          currentPrice = entryPrice + (unrealizedPnl / positionSize);
+        }
+
+        const pnlPercent = entryPrice > 0 ? ((currentPrice - entryPrice) / entryPrice) * 100 : 0;
+
+        return {
+          symbol,
+          size: positionSize,
+          entryPrice,
+          currentPrice,
+          unrealizedPnl,
+          pnlPercent,
+          marginUsed: parseFloat(position.marginUsed || '0'),
+          maxTradeSzs: position.maxTradeSzs || [],
+        };
+      }).filter((pos: any) => pos.size !== 0); // Filter out zero positions
+
+      // Calculate total unrealized PnL
+      const totalUnrealizedPnl = positions.reduce((sum: number, pos: any) => sum + pos.unrealizedPnl, 0);
+      
+      // Calculate realized PnL (not directly available, estimate from total value changes)
+      const realizedPnl = totalValue - totalRawUsd - totalUnrealizedPnl;
+
+      const portfolioData = {
+        totalValue,
+        unrealizedPnl: totalUnrealizedPnl,
+        realizedPnl,
+        withdrawable,
+        marginUsed: parseFloat(marginSummary.totalMarginUsed || '0'),
+        positions,
+        raw: {
+          marginSummary,
+          assetPositions: positions.length,
+          withdrawable,
         },
-      ],
-    };
+      };
+
+      logger.info('Account state parsed successfully', {
+        totalValue: portfolioData.totalValue,
+        positionCount: portfolioData.positions.length,
+        unrealizedPnl: portfolioData.unrealizedPnl,
+      });
+
+      return portfolioData;
+    } catch (error) {
+      logger.error('Failed to parse HyperLiquid account state', { error });
+      throw new Error(`Account state parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private calculateRiskLevel(volatility: number, rsi: number): 'low' | 'medium' | 'high' {

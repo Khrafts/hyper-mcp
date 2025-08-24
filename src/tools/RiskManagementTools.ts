@@ -523,7 +523,7 @@ export class RiskManagementTools {
       includeResolved: z.boolean().default(false),
     });
 
-    const parsed = schema.parse(args);
+    schema.parse(args); // Validate input
 
     try {
       const activeAlerts = this.riskEngine.getActiveAlerts();

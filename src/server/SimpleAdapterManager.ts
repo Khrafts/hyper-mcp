@@ -12,7 +12,7 @@ import { RiskManagementEngine } from '../risk/RiskManagementEngine.js';
 import { RiskManagementTools } from '../tools/RiskManagementTools.js';
 import { HyperLiquidNodeInfoAdapter } from '../adapters/hyperliquid/HyperLiquidNodeInfoAdapter.js';
 import { NodeInfoTools } from '../tools/NodeInfoTools.js';
-import { MarketIntelligence } from '../analytics/MarketIntelligence.js';
+// import { MarketIntelligence } from '../analytics/MarketIntelligence.js';
 import { createComponentLogger } from '../utils/logger.js';
 import { getConfig, createConfigSections } from '../config/index.js';
 import { ToolRegistry } from './ToolRegistry.js';
@@ -32,7 +32,8 @@ export class SimpleAdapterManager {
   private glueXAdapter?: SimpleGlueXAdapter;
   private glueXTools?: SimpleGlueXTools;
   private marketIntelligenceTools?: MarketIntelligenceTools;
-  private marketIntelligence?: MarketIntelligence;
+  // Market intelligence for tools initialization
+  // private _marketIntelligence?: MarketIntelligence;
   private executionEngine?: ExecutionEngine;
   private executionTools?: ExecutionTools;
   private riskEngine?: RiskManagementEngine;
@@ -106,7 +107,7 @@ export class SimpleAdapterManager {
       });
 
       // Initialize market intelligence and advanced engines
-      this.marketIntelligence = new MarketIntelligence(this.hyperLiquidAdapter);
+      // this._marketIntelligence = new MarketIntelligence(this.hyperLiquidAdapter);
       this.executionEngine = new ExecutionEngine(this.hyperLiquidAdapter);
       this.riskEngine = new RiskManagementEngine(this.hyperLiquidAdapter);
 

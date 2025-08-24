@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { SimpleHyperLiquidAdapter } from '../adapters/hyperliquid/SimpleHyperLiquidAdapter.js';
-import { MarketIntelligence } from '../analytics/MarketIntelligence.js';
+// import { MarketIntelligence } from '../analytics/MarketIntelligence.js';
 import { createComponentLogger } from '../utils/logger.js';
 
 const logger = createComponentLogger('EXECUTION_ENGINE');
@@ -57,7 +57,8 @@ export interface ExecutionReport {
 
 export class ExecutionEngine extends EventEmitter {
   private adapter: SimpleHyperLiquidAdapter;
-  private marketIntelligence: MarketIntelligence;
+  // Market intelligence for future advanced features
+  // private _marketIntelligence?: MarketIntelligence;
   private activeOrders: Map<string, ExecutionOrder> = new Map();
   private orderSlices: Map<string, ExecutionSlice[]> = new Map();
   private executionReports: Map<string, ExecutionReport> = new Map();
@@ -66,7 +67,7 @@ export class ExecutionEngine extends EventEmitter {
   constructor(adapter: SimpleHyperLiquidAdapter) {
     super();
     this.adapter = adapter;
-    this.marketIntelligence = new MarketIntelligence(adapter);
+    // this._marketIntelligence = new MarketIntelligence(adapter);
 
     logger.info('ExecutionEngine initialized');
   }
@@ -440,8 +441,13 @@ export class ExecutionEngine extends EventEmitter {
     slice.status = 'submitted';
 
     try {
-      // Convert to HyperLiquid format and submit
-      const assetId = 0; // Would need to resolve symbol to asset ID
+      // Resolve symbol to asset ID for HyperLiquid API  
+      const order = this.activeOrders.get(slice.parentOrderId);
+      if (!order) {
+        throw new Error(`Order not found for slice: ${slice.parentOrderId}`);
+      }
+      
+      const assetId = await this.resolveSymbolToAssetId(order.symbol);
       
       let result;
       if (slice.price) {
@@ -574,6 +580,96 @@ export class ExecutionEngine extends EventEmitter {
 
   private generateOrderId(): string {
     return `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private symbolToAssetIdCache: Map<string, number> = new Map();
+
+  private async resolveSymbolToAssetId(symbol: string): Promise<number> {
+    // Check cache first
+    if (this.symbolToAssetIdCache.has(symbol)) {
+      return this.symbolToAssetIdCache.get(symbol)!;
+    }
+
+    try {
+      // Get asset metadata from HyperLiquid to resolve symbol to asset ID
+      const assets = await this.adapter.getAssets();
+      
+      if (assets && Array.isArray(assets)) {
+        // Look for the symbol in the asset data
+        const assetInfo = assets.find((asset: any) => {
+          // HyperLiquid assets are often indexed by position, with symbol info
+          const assetSymbol = asset?.coin || asset?.symbol || asset?.name;
+          return assetSymbol === symbol;
+        });
+
+        if (assetInfo) {
+          // For HyperLiquid, asset ID is often the index position
+          const assetId = parseInt((assetInfo as any)?.assetId || (assetInfo as any)?.id || 
+                                  assets.indexOf(assetInfo).toString() || '0');
+          
+          // Cache the result
+          this.symbolToAssetIdCache.set(symbol, assetId);
+          
+          logger.debug('Symbol resolved to asset ID from assets endpoint', { 
+            symbol, 
+            assetId,
+            cached: false 
+          });
+          
+          return assetId;
+        }
+      }
+
+      // Fallback: try to resolve from adapter metadata
+      const adapterMetadata = this.adapter.getMetadata();
+      if (adapterMetadata && typeof adapterMetadata === 'object' && 'symbols' in adapterMetadata) {
+        const symbols = adapterMetadata.symbols as any[];
+        const symbolIndex = symbols.findIndex((s: string) => s === symbol);
+        
+        if (symbolIndex >= 0) {
+          const assetId = symbolIndex;
+          this.symbolToAssetIdCache.set(symbol, assetId);
+          
+          logger.debug('Symbol resolved via adapter metadata', { 
+            symbol, 
+            assetId,
+            cached: false 
+          });
+          
+          return assetId;
+        }
+      }
+
+      // Final fallback: use hardcoded common symbols
+      const commonSymbols: Record<string, number> = {
+        'BTC': 0,
+        'ETH': 1,
+        'SOL': 2,
+        'ARB': 3,
+        'AVAX': 4,
+      };
+
+      if (commonSymbols[symbol]) {
+        const assetId = commonSymbols[symbol];
+        this.symbolToAssetIdCache.set(symbol, assetId);
+        
+        logger.warn('Symbol resolved using fallback mapping', { 
+          symbol, 
+          assetId,
+          warning: 'Using hardcoded fallback - may be inaccurate'
+        });
+        
+        return assetId;
+      }
+
+      throw new Error(`Unable to resolve symbol '${symbol}' to asset ID`);
+    } catch (error) {
+      logger.error('Failed to resolve symbol to asset ID', { 
+        symbol, 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
   }
 
   private generateSliceId(): string {

@@ -74,7 +74,7 @@ export class TechnicalIndicators {
     ema.push(smaFirst);
 
     for (let i = period; i < prices.length; i++) {
-      const emaValue = prices[i] * multiplier + ema[ema.length - 1] * (1 - multiplier);
+      const emaValue = prices[i]! * multiplier + ema[ema.length - 1]! * (1 - multiplier);
       ema.push(emaValue);
     }
 
@@ -94,7 +94,7 @@ export class TechnicalIndicators {
 
     // Calculate price changes
     for (let i = 1; i < prices.length; i++) {
-      const change = prices[i] - prices[i - 1];
+      const change = prices[i]! - prices[i - 1]!;
       gains.push(change > 0 ? change : 0);
       losses.push(change < 0 ? Math.abs(change) : 0);
     }
@@ -287,7 +287,7 @@ export class TechnicalIndicators {
 
     const returns: number[] = [];
     for (let i = 1; i < prices.length; i++) {
-      const returnVal = (prices[i] - prices[i - 1]) / prices[i - 1];
+      const returnVal = (prices[i]! - prices[i - 1]!) / prices[i - 1]!;
       returns.push(returnVal);
     }
 
