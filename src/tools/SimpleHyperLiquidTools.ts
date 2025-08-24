@@ -114,6 +114,119 @@ export class SimpleHyperLiquidTools {
           additionalProperties: false,
         },
       },
+      {
+        name: 'hyperliquid_place_market_order',
+        description: 'Place a market order on HyperLiquid (requires private key)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            assetId: {
+              type: 'number',
+              description: 'Asset ID for the trading pair',
+            },
+            isBuy: {
+              type: 'boolean',
+              description: 'True for buy order, false for sell order',
+            },
+            size: {
+              type: 'string',
+              description: 'Order size (amount to trade)',
+            },
+            reduceOnly: {
+              type: 'boolean',
+              description: 'Whether this is a reduce-only order',
+              default: false,
+            },
+          },
+          required: ['assetId', 'isBuy', 'size'],
+          additionalProperties: false,
+        },
+      },
+      {
+        name: 'hyperliquid_place_limit_order',
+        description: 'Place a limit order on HyperLiquid (requires private key)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            assetId: {
+              type: 'number',
+              description: 'Asset ID for the trading pair',
+            },
+            isBuy: {
+              type: 'boolean',
+              description: 'True for buy order, false for sell order',
+            },
+            price: {
+              type: 'string',
+              description: 'Limit price for the order',
+            },
+            size: {
+              type: 'string',
+              description: 'Order size (amount to trade)',
+            },
+            timeInForce: {
+              type: 'string',
+              description: 'Time in force for the order',
+              enum: ['Alo', 'Ioc', 'Gtc'],
+              default: 'Gtc',
+            },
+            reduceOnly: {
+              type: 'boolean',
+              description: 'Whether this is a reduce-only order',
+              default: false,
+            },
+          },
+          required: ['assetId', 'isBuy', 'price', 'size'],
+          additionalProperties: false,
+        },
+      },
+      {
+        name: 'hyperliquid_cancel_order',
+        description: 'Cancel an existing order on HyperLiquid (requires private key)',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            assetId: {
+              type: 'number',
+              description: 'Asset ID for the trading pair',
+            },
+            orderId: {
+              type: 'number',
+              description: 'Order ID to cancel',
+            },
+          },
+          required: ['assetId', 'orderId'],
+          additionalProperties: false,
+        },
+      },
+      {
+        name: 'hyperliquid_get_open_orders',
+        description: 'Get open orders for the account',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            address: {
+              type: 'string',
+              description: 'Optional wallet address. Uses default if not provided.',
+            },
+          },
+          additionalProperties: false,
+        },
+      },
+      {
+        name: 'hyperliquid_get_user_fills',
+        description: 'Get recent fills/trades for the account',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            address: {
+              type: 'string',
+              description: 'Optional wallet address. Uses default if not provided.',
+            },
+          },
+          additionalProperties: false,
+        },
+      },
     ];
   }
 
@@ -143,6 +256,21 @@ export class SimpleHyperLiquidTools {
 
         case 'hyperliquid_health_check':
           return await this.healthCheck();
+
+        case 'hyperliquid_place_market_order':
+          return await this.placeMarketOrder(args);
+
+        case 'hyperliquid_place_limit_order':
+          return await this.placeLimitOrder(args);
+
+        case 'hyperliquid_cancel_order':
+          return await this.cancelOrder(args);
+
+        case 'hyperliquid_get_open_orders':
+          return await this.getOpenOrders(args);
+
+        case 'hyperliquid_get_user_fills':
+          return await this.getUserFills(args);
 
         default:
           throw new Error(`Unknown tool: ${name}`);
@@ -359,5 +487,276 @@ export class SimpleHyperLiquidTools {
         },
       ],
     };
+  }
+
+  private async placeMarketOrder(args: unknown): Promise<CallToolResult> {
+    const schema = z.object({
+      assetId: z.number(),
+      isBuy: z.boolean(),
+      size: z.string(),
+      reduceOnly: z.boolean().default(false),
+    });
+
+    const parsed = schema.parse(args);
+
+    try {
+      const result = await this.adapter.placeMarketOrder(
+        parsed.assetId,
+        parsed.isBuy,
+        parsed.size,
+        parsed.reduceOnly
+      );
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                action: 'place_market_order',
+                assetId: parsed.assetId,
+                isBuy: parsed.isBuy,
+                size: parsed.size,
+                reduceOnly: parsed.reduceOnly,
+                result,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                action: 'place_market_order',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                assetId: parsed.assetId,
+                isBuy: parsed.isBuy,
+                size: parsed.size,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  }
+
+  private async placeLimitOrder(args: unknown): Promise<CallToolResult> {
+    const schema = z.object({
+      assetId: z.number(),
+      isBuy: z.boolean(),
+      price: z.string(),
+      size: z.string(),
+      timeInForce: z.enum(['Alo', 'Ioc', 'Gtc']).default('Gtc'),
+      reduceOnly: z.boolean().default(false),
+    });
+
+    const parsed = schema.parse(args);
+
+    try {
+      const result = await this.adapter.placeLimitOrder(
+        parsed.assetId,
+        parsed.isBuy,
+        parsed.price,
+        parsed.size,
+        parsed.timeInForce,
+        parsed.reduceOnly
+      );
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                action: 'place_limit_order',
+                assetId: parsed.assetId,
+                isBuy: parsed.isBuy,
+                price: parsed.price,
+                size: parsed.size,
+                timeInForce: parsed.timeInForce,
+                reduceOnly: parsed.reduceOnly,
+                result,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                action: 'place_limit_order',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                assetId: parsed.assetId,
+                price: parsed.price,
+                size: parsed.size,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  }
+
+  private async cancelOrder(args: unknown): Promise<CallToolResult> {
+    const schema = z.object({
+      assetId: z.number(),
+      orderId: z.number(),
+    });
+
+    const parsed = schema.parse(args);
+
+    try {
+      const result = await this.adapter.cancelOrder(parsed.assetId, parsed.orderId);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                action: 'cancel_order',
+                assetId: parsed.assetId,
+                orderId: parsed.orderId,
+                result,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                action: 'cancel_order',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                assetId: parsed.assetId,
+                orderId: parsed.orderId,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  }
+
+  private async getOpenOrders(args: unknown): Promise<CallToolResult> {
+    const schema = z.object({
+      address: z.string().optional(),
+    });
+
+    const parsed = schema.parse(args);
+
+    try {
+      const orders = await this.adapter.getOpenOrders(parsed.address);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                address: parsed.address || 'default',
+                orders,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                address: parsed.address || 'default',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  }
+
+  private async getUserFills(args: unknown): Promise<CallToolResult> {
+    const schema = z.object({
+      address: z.string().optional(),
+    });
+
+    const parsed = schema.parse(args);
+
+    try {
+      const fills = await this.adapter.getUserFills(parsed.address);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                address: parsed.address || 'default',
+                fills,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                address: parsed.address || 'default',
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
   }
 }

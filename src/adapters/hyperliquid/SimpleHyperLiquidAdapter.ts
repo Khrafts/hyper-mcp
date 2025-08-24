@@ -1,5 +1,11 @@
 import { BaseAdapter, AdapterMetadata, AdapterHealthStatus } from '../BaseAdapter.js';
 import { createComponentLogger } from '../../utils/logger.js';
+import {
+  HyperLiquidSigner,
+  createHyperLiquidSigner,
+  validateAction,
+  OrderAction,
+} from '../../utils/crypto.js';
 import { z } from 'zod';
 
 const logger = createComponentLogger('SIMPLE_HYPERLIQUID_ADAPTER');
@@ -19,6 +25,7 @@ export class SimpleHyperLiquidAdapter extends BaseAdapter {
   private privateKey?: string;
   private userAddress?: string;
   private testnet: boolean;
+  private signer?: HyperLiquidSigner;
 
   constructor(config: SimpleHyperLiquidConfig) {
     const metadata: AdapterMetadata = {
@@ -71,11 +78,21 @@ export class SimpleHyperLiquidAdapter extends BaseAdapter {
     this.userAddress = config.address;
     this.testnet = config.testnet || false;
 
+    // Initialize signer if private key is provided
+    if (this.privateKey) {
+      this.signer = createHyperLiquidSigner(this.privateKey);
+      // Update user address from signer if not provided
+      if (!this.userAddress) {
+        this.userAddress = this.signer.getAddress();
+      }
+    }
+
     logger.info('SimpleHyperLiquidAdapter created', {
       base_url: config.baseUrl,
       ws_url: config.wsUrl,
       testnet: this.testnet,
       has_auth: !!(config.privateKey && config.address),
+      signer_address: this.signer?.getAddress(),
     });
   }
 
@@ -195,21 +212,132 @@ export class SimpleHyperLiquidAdapter extends BaseAdapter {
     return await this.makeRequest('/info', { type: 'userFills', user: userAddress });
   }
 
-  // Trading Methods (simplified - would require proper signing implementation)
-  async placeOrder(orderData: Record<string, unknown>): Promise<unknown> {
-    if (!this.privateKey) {
-      throw new Error('Trading requires a private key');
+  // Trading Methods with proper signing
+  async placeOrder(orderAction: OrderAction): Promise<unknown> {
+    if (!this.signer) {
+      throw new Error('Trading requires a private key and signer');
     }
 
-    // Note: This is a simplified version. Real implementation would need proper signing
-    const timestamp = Date.now();
-    const action = { type: 'order', orders: [orderData] };
+    // Validate the action
+    const validation = validateAction(orderAction);
+    if (!validation.valid) {
+      throw new Error(`Invalid order action: ${validation.errors.join(', ')}`);
+    }
+
+    const nonce = Date.now();
+    const signature = await this.signer.signAction(orderAction, nonce);
+
+    logger.debug('Placing order with signature', {
+      action_type: orderAction.type,
+      order_count: orderAction.orders.length,
+      nonce,
+    });
 
     return await this.makeRequest('/exchange', {
-      action,
-      nonce: timestamp,
-      signature: 'placeholder_signature', // Would need proper signing
+      action: orderAction,
+      nonce,
+      signature,
     });
+  }
+
+  async cancelOrder(assetId: number, orderId: number): Promise<unknown> {
+    if (!this.signer) {
+      throw new Error('Trading requires a private key and signer');
+    }
+
+    const cancelAction = this.signer.createCancelOrderAction(assetId, orderId);
+    const nonce = Date.now();
+    const signature = await this.signer.signAction(cancelAction, nonce);
+
+    logger.debug('Cancelling order with signature', {
+      asset_id: assetId,
+      order_id: orderId,
+      nonce,
+    });
+
+    return await this.makeRequest('/exchange', {
+      action: cancelAction,
+      nonce,
+      signature,
+    });
+  }
+
+  async modifyOrder(
+    orderId: number,
+    assetId: number,
+    isBuy: boolean,
+    price: string,
+    size: string,
+    timeInForce: 'Alo' | 'Ioc' | 'Gtc' = 'Gtc',
+    reduceOnly: boolean = false
+  ): Promise<unknown> {
+    if (!this.signer) {
+      throw new Error('Trading requires a private key and signer');
+    }
+
+    const modifyAction = this.signer.createModifyOrderAction(
+      orderId,
+      assetId,
+      isBuy,
+      price,
+      size,
+      timeInForce,
+      reduceOnly
+    );
+    const nonce = Date.now();
+    const signature = await this.signer.signAction(modifyAction, nonce);
+
+    logger.debug('Modifying order with signature', {
+      order_id: orderId,
+      asset_id: assetId,
+      price,
+      size,
+      nonce,
+    });
+
+    return await this.makeRequest('/exchange', {
+      action: modifyAction,
+      nonce,
+      signature,
+    });
+  }
+
+  // Convenience methods for common order types
+  async placeMarketOrder(
+    assetId: number,
+    isBuy: boolean,
+    size: string,
+    reduceOnly: boolean = false
+  ): Promise<unknown> {
+    if (!this.signer) {
+      throw new Error('Trading requires a private key and signer');
+    }
+
+    const orderAction = this.signer.createMarketOrderAction(assetId, isBuy, size, reduceOnly);
+    return await this.placeOrder(orderAction);
+  }
+
+  async placeLimitOrder(
+    assetId: number,
+    isBuy: boolean,
+    price: string,
+    size: string,
+    timeInForce: 'Alo' | 'Ioc' | 'Gtc' = 'Gtc',
+    reduceOnly: boolean = false
+  ): Promise<unknown> {
+    if (!this.signer) {
+      throw new Error('Trading requires a private key and signer');
+    }
+
+    const orderAction = this.signer.createLimitOrderAction(
+      assetId,
+      isBuy,
+      price,
+      size,
+      timeInForce,
+      reduceOnly
+    );
+    return await this.placeOrder(orderAction);
   }
 
   // Health check override
@@ -276,5 +404,9 @@ export class SimpleHyperLiquidAdapter extends BaseAdapter {
 
   isTestnet(): boolean {
     return this.testnet;
+  }
+
+  getSigner(): HyperLiquidSigner | undefined {
+    return this.signer;
   }
 }
