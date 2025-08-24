@@ -3,6 +3,7 @@ import { logger } from '../utils/logger.js';
 import { ProtocolValidator } from './validation/ProtocolValidator.js';
 import { DynamicLoader } from './loading/DynamicLoader.js';
 import { GitHubIntegration } from './github/GitHubIntegration.js';
+import { communityErrorHandler } from './utils/CommunityErrorHandler.js';
 import {
   CommunityProtocol,
   CommunitySystemConfig,
@@ -62,7 +63,15 @@ export class CommunityManager extends EventEmitter {
       // First validate the protocol
       const validationResult = await this.validateProtocol(protocol);
       if (!validationResult.valid) {
-        throw new Error(`Protocol validation failed: ${validationResult.errors.map((e: any) => e.message).join(', ')}`);
+        const validationError = communityErrorHandler.createProtocolValidationError(
+          `Protocol validation failed: ${validationResult.errors.map((e: any) => e.message).join(', ')}`,
+          {
+            protocolName: protocol.name,
+            protocolVersion: protocol.version,
+            validationErrors: validationResult.errors
+          }
+        );
+        throw validationError;
       }
 
       // Load the protocol
@@ -72,8 +81,16 @@ export class CommunityManager extends EventEmitter {
       logger.info(`Successfully loaded protocol: ${protocol.name}@${protocol.version}`);
       return loadedProtocol;
     } catch (error) {
-      logger.error(`Failed to load protocol ${protocol.name}:`, error);
-      throw error;
+      const loadError = communityErrorHandler.createProtocolLoadError(
+        `Failed to load protocol ${protocol.name}`,
+        {
+          protocolName: protocol.name,
+          protocolVersion: protocol.version
+        },
+        error instanceof Error ? error : new Error(String(error))
+      );
+      communityErrorHandler.logError(loadError);
+      throw loadError;
     }
   }
 
@@ -148,13 +165,27 @@ export class CommunityManager extends EventEmitter {
 
       this.emit('submission:processed', submission);
     } catch (error) {
-      logger.error(`Failed to process submission PR #${submission.pullRequestNumber}:`, error);
+      const submissionError = communityErrorHandler.createSubmissionProcessingError(
+        `Failed to process submission PR #${submission.pullRequestNumber}`,
+        {
+          pullRequestNumber: submission.pullRequestNumber,
+          author: submission.author,
+          protocolName: submission.protocolPath?.split('/').pop()?.replace('.json', '')
+        },
+        error instanceof Error ? error : new Error(String(error))
+      );
+      
+      communityErrorHandler.logError(submissionError, {
+        pullRequestNumber: submission.pullRequestNumber,
+        author: submission.author
+      });
+
       submission.status = 'rejected';
       await this.github.rejectSubmission(submission, {
         valid: false,
         errors: [{
           code: 'PROCESSING_ERROR',
-          message: `Internal error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          message: `Internal error: ${submissionError.message}`,
           path: '',
           severity: 'error'
         }],

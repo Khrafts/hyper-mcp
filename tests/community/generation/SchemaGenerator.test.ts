@@ -77,12 +77,10 @@ describe('SchemaGenerator', () => {
             required: false,
             properties: {
               tags: {
-                name: 'tags',
                 type: 'array',
                 description: 'Array of tags',
                 required: false,
                 items: {
-                  name: 'tag',
                   type: 'string',
                   description: 'Individual tag',
                   required: true

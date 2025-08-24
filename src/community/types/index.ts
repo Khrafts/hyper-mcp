@@ -36,15 +36,28 @@ export interface ParameterDefinition {
   pattern?: string;
   minimum?: number;
   maximum?: number;
-  items?: ParameterDefinition;
-  properties?: Record<string, ParameterDefinition>;
+  items?: PropertySchema;
+  properties?: Record<string, PropertySchema>;
+}
+
+export interface PropertySchema {
+  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
+  description: string;
+  required: boolean;
+  default?: any;
+  enum?: any[];
+  pattern?: string;
+  minimum?: number;
+  maximum?: number;
+  items?: PropertySchema;
+  properties?: Record<string, PropertySchema>;
 }
 
 export interface ResponseDefinition {
   type: 'string' | 'number' | 'boolean' | 'object' | 'array';
   description: string;
-  properties?: Record<string, ParameterDefinition>;
-  items?: ParameterDefinition;
+  properties?: Record<string, PropertySchema>;
+  items?: PropertySchema;
 }
 
 export interface AuthenticationConfig {
@@ -128,4 +141,16 @@ export interface CommunitySystemConfig {
     webhookSecret?: string;
     autoMerge: boolean;
   };
+}
+
+// Community-specific error helper
+export interface CommunityErrorContext extends Record<string, unknown> {
+  protocolName?: string;
+  protocolVersion?: string;
+  endpoint?: string;
+  toolName?: string;
+  submissionId?: string;
+  pullRequestNumber?: number;
+  author?: string;
+  validationErrors?: ValidationError[];
 }

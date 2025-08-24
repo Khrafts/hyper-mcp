@@ -1,14 +1,15 @@
-import { ProtocolValidator } from '../../src/community/validation/ProtocolValidator';
+import { ProtocolValidator } from '../../src/community/validation/ProtocolValidator.js';
 import {
   CommunityProtocol,
   ProtocolEndpoint,
   ParameterDefinition,
+  PropertySchema,
   ResponseDefinition,
   AuthenticationConfig,
   RateLimitConfig,
   ValidationResult,
-} from '../../src/community/types';
-import { ProtocolBuilder, EndpointBuilder, ParameterBuilder, SDKError } from '../types';
+} from '../../src/community/types/index.js';
+import { ProtocolBuilder, EndpointBuilder, ParameterBuilder, SDKError } from '../types/index.js';
 
 export class CommunityProtocolBuilder implements ProtocolBuilder {
   private protocol: Partial<CommunityProtocol> = {
@@ -420,14 +421,14 @@ export class CommunityParameterBuilder implements ParameterBuilder {
     return this;
   }
 
-  setItems(items: ParameterDefinition): ParameterBuilder {
+  setItems(items: PropertySchema): ParameterBuilder {
     if (items && typeof items === 'object') {
       this.parameter.items = items;
     }
     return this;
   }
 
-  setProperties(properties: Record<string, ParameterDefinition>): ParameterBuilder {
+  setProperties(properties: Record<string, PropertySchema>): ParameterBuilder {
     if (properties && typeof properties === 'object') {
       this.parameter.properties = properties;
     }

@@ -37,6 +37,18 @@ const ConfigSchema = z.object({
   CACHE_TTL_SECONDS: z.coerce.number().default(60),
   MAX_CONCURRENT_REQUESTS: z.coerce.number().default(10),
 
+  // Community System Configuration
+  ENABLE_COMMUNITY_SYSTEM: z.coerce.boolean().default(false),
+  GITHUB_TOKEN: z.string().optional(),
+  GITHUB_WEBHOOK_SECRET: z.string().optional(),
+  COMMUNITY_REPOSITORY: z.string().default('hyperliquid-intelligence/community-protocols'),
+  COMMUNITY_AUTO_MERGE: z.coerce.boolean().default(false),
+  COMMUNITY_MAX_ENDPOINTS: z.coerce.number().default(10),
+  COMMUNITY_STRICT_MODE: z.coerce.boolean().default(true),
+  COMMUNITY_CACHE_TTL_MS: z.coerce.number().default(3600000), // 1 hour
+  COMMUNITY_VALIDATION_TIMEOUT_MS: z.coerce.number().default(30000),
+  COMMUNITY_ALLOWED_DOMAINS: z.string().optional(), // Comma-separated list
+  
   // Development
   ENABLE_DEBUG_LOGGING: z.coerce.boolean().default(false),
   MOCK_EXTERNAL_APIS: z.coerce.boolean().default(false),
@@ -115,4 +127,39 @@ export const createConfigSections = (config: Config) => ({
     enableDebugLogging: config.ENABLE_DEBUG_LOGGING,
     mockExternalApis: config.MOCK_EXTERNAL_APIS,
   },
+  community: {
+    enabled: config.ENABLE_COMMUNITY_SYSTEM,
+    repository: config.COMMUNITY_REPOSITORY,
+    autoMerge: config.COMMUNITY_AUTO_MERGE,
+    maxEndpoints: config.COMMUNITY_MAX_ENDPOINTS,
+    strictMode: config.COMMUNITY_STRICT_MODE,
+    cacheTtlMs: config.COMMUNITY_CACHE_TTL_MS,
+    validationTimeoutMs: config.COMMUNITY_VALIDATION_TIMEOUT_MS,
+    githubToken: config.GITHUB_TOKEN,
+    githubWebhookSecret: config.GITHUB_WEBHOOK_SECRET,
+    allowedDomains: config.COMMUNITY_ALLOWED_DOMAINS?.split(',').map(d => d.trim()).filter(Boolean),
+  },
 });
+
+// Create community system configuration from main config
+export function createCommunitySystemConfig(config: Config): import('../community/types/index.js').CommunitySystemConfig {
+  return {
+    validation: {
+      strictMode: config.COMMUNITY_STRICT_MODE,
+      maxEndpoints: config.COMMUNITY_MAX_ENDPOINTS,
+      allowedDomains: config.COMMUNITY_ALLOWED_DOMAINS?.split(',').map(d => d.trim()).filter(Boolean),
+      requiredFields: ['name', 'version', 'description', 'author', 'license']
+    },
+    loading: {
+      timeout: config.COMMUNITY_VALIDATION_TIMEOUT_MS,
+      retries: 3,
+      cacheTTL: config.COMMUNITY_CACHE_TTL_MS
+    },
+    github: {
+      repository: config.COMMUNITY_REPOSITORY,
+      token: config.GITHUB_TOKEN,
+      webhookSecret: config.GITHUB_WEBHOOK_SECRET,
+      autoMerge: config.COMMUNITY_AUTO_MERGE
+    }
+  };
+}

@@ -167,6 +167,13 @@ export class ErrorHandler {
           backoffMultiplier: 1,
           maxBackoffMs: 1000,
         },
+        [ErrorCategory.COMMUNITY]: {
+          shouldRetry: true,
+          maxRetries: 3,
+          backoffMs: 2000,
+          backoffMultiplier: 2,
+          maxBackoffMs: 30000,
+        },
         ...config?.categorizedStrategies,
       },
     };

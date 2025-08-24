@@ -1,4 +1,4 @@
-import { ProtocolTemplate } from '../types';
+import { ProtocolTemplate } from '../types/index.js';
 
 export const protocolTemplates: ProtocolTemplate[] = [
   {

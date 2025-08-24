@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { MCPServer } from './server/MCPServer.js';
-import { getConfig, validateConfig } from './config/index.js';
+import { getConfig, validateConfig, createCommunitySystemConfig } from './config/index.js';
 import { createComponentLogger } from './utils/logger.js';
 
 const logger = createComponentLogger('MAIN');
@@ -64,6 +64,23 @@ async function main() {
 
     // Start the server
     await server.start();
+
+    // Initialize community system if enabled
+    if (config.ENABLE_COMMUNITY_SYSTEM) {
+      try {
+        logger.info('Community system enabled, initializing...');
+        const communityConfig = createCommunitySystemConfig(config);
+        await server.initializeCommunitySystem(communityConfig);
+        logger.info('Community system initialized successfully');
+      } catch (error) {
+        logger.error('Failed to initialize community system', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        // Continue startup but log the failure
+      }
+    } else {
+      logger.debug('Community system disabled');
+    }
 
     // Log successful startup
     const healthStatus = await server.getHealthStatus();

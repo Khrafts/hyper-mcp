@@ -1,15 +1,23 @@
 // Main SDK exports
-export * from './types';
-export * from './utilities/ProtocolBuilder';
-export * from './templates';
+export * from './types/index.js';
+export * from './utilities/ProtocolBuilder.js';
+export * from './templates/index.js';
+
+// Import functions for use in this file
+import {
+  createProtocol,
+  createEndpoint,
+} from './utilities/ProtocolBuilder.js';
 
 // Utilities
 export {
   CommunityProtocolBuilder,
   CommunityEndpointBuilder,
   CommunityParameterBuilder,
-} from './utilities/ProtocolBuilder';
-export { createProtocol, createEndpoint, createParameter } from './utilities/ProtocolBuilder';
+  createProtocol,
+  createEndpoint,
+  createParameter
+} from './utilities/ProtocolBuilder.js';
 
 // Templates
 export {
@@ -18,7 +26,7 @@ export {
   getTemplatesByCategory,
   getAllTemplates,
   getTemplateCategories,
-} from './templates';
+} from './templates/index.js';
 
 // SDK version and info
 export const SDK_VERSION = '1.0.0';

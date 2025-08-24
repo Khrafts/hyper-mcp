@@ -2,7 +2,8 @@ import { logger } from '../../utils/logger.js';
 import {
   CommunityProtocol,
   ProtocolEndpoint,
-  ParameterDefinition
+  ParameterDefinition,
+  PropertySchema
 } from '../types/index.js';
 
 export interface MCPToolSchema {
@@ -117,7 +118,7 @@ export class SchemaGenerator {
     return description;
   }
 
-  private convertParameterToJsonSchema(param: ParameterDefinition): any {
+  private convertParameterToJsonSchema(param: ParameterDefinition | PropertySchema): any {
     const schema: any = {
       type: param.type,
       description: param.description
@@ -168,7 +169,7 @@ export class SchemaGenerator {
           schema.properties = {};
           const requiredProps: string[] = [];
           
-          Object.entries(param.properties).forEach(([propName, propDef]: [string, ParameterDefinition]) => {
+          Object.entries(param.properties).forEach(([propName, propDef]: [string, PropertySchema]) => {
             schema.properties[propName] = this.convertParameterToJsonSchema(propDef);
             if (propDef.required) {
               requiredProps.push(propName);

@@ -1,0 +1,259 @@
+name: Community Protocol Validation
+
+on:
+  pull_request:
+    paths:
+      - 'protocols/**/*.json'
+      - 'protocols/**/*.yaml'
+      - 'protocols/**/*.yml'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      protocol_file:
+        description: 'Path to protocol file to validate'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  validate-protocol:
+    name: Validate Community Protocol
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build project
+        run: pnpm build
+
+      - name: Get changed protocol files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files: |
+            protocols/**/*.json
+            protocols/**/*.yaml
+            protocols/**/*.yml
+
+      - name: Validate protocols
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Validating changed protocol files:"
+          echo "${{ steps.changed-files.outputs.all_changed_files }}"
+          
+          # Create a temporary validation script
+          cat > validate-protocols.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const { ProtocolValidator } = require('./dist/src/community/validation/ProtocolValidator.js');
+          
+          async function validateProtocol(filePath) {
+            try {
+              console.log(`\n🔍 Validating: ${filePath}`);
+              
+              const content = fs.readFileSync(filePath, 'utf8');
+              let protocol;
+              
+              if (filePath.endsWith('.json')) {
+                protocol = JSON.parse(content);
+              } else if (filePath.endsWith('.yaml') || filePath.endsWith('.yml')) {
+                const yaml = require('yaml');
+                protocol = yaml.parse(content);
+              }
+              
+              const validator = new ProtocolValidator({
+                strictMode: true,
+                maxEndpoints: 10,
+                requiredFields: ['name', 'version', 'description', 'author', 'license']
+              });
+              
+              const result = await validator.validate(protocol);
+              
+              if (result.valid) {
+                console.log(`✅ Protocol ${protocol.name}@${protocol.version} is valid`);
+                if (result.warnings.length > 0) {
+                  console.log(`⚠️  Warnings:`);
+                  result.warnings.forEach(warning => {
+                    console.log(`   - ${warning.message} (${warning.path})`);
+                  });
+                }
+              } else {
+                console.log(`❌ Protocol ${protocol.name}@${protocol.version} is invalid`);
+                console.log(`Errors:`);
+                result.errors.forEach(error => {
+                  console.log(`   - ${error.message} (${error.path})`);
+                });
+                return false;
+              }
+              
+              return true;
+            } catch (error) {
+              console.error(`💥 Failed to validate ${filePath}:`, error.message);
+              return false;
+            }
+          }
+          
+          async function main() {
+            const args = process.argv.slice(2);
+            if (args.length === 0) {
+              console.log('No protocol files to validate');
+              return true;
+            }
+            
+            let allValid = true;
+            for (const filePath of args) {
+              const isValid = await validateProtocol(filePath);
+              if (!isValid) {
+                allValid = false;
+              }
+            }
+            
+            if (allValid) {
+              console.log('\n🎉 All protocols are valid!');
+            } else {
+              console.log('\n💥 Some protocols failed validation');
+              process.exit(1);
+            }
+          }
+          
+          main().catch(error => {
+            console.error('Validation script failed:', error);
+            process.exit(1);
+          });
+          EOF
+          
+          # Run validation on changed files
+          node validate-protocols.js ${{ steps.changed-files.outputs.all_changed_files }}
+
+      - name: Run community system tests
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: pnpm test tests/community/
+
+      - name: Generate protocol documentation
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          # Create documentation generation script
+          cat > generate-docs.js << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const { SchemaGenerator } = require('./dist/src/community/generation/SchemaGenerator.js');
+          
+          async function generateDocs(filePath) {
+            try {
+              const content = fs.readFileSync(filePath, 'utf8');
+              let protocol;
+              
+              if (filePath.endsWith('.json')) {
+                protocol = JSON.parse(content);
+              } else if (filePath.endsWith('.yaml') || filePath.endsWith('.yml')) {
+                const yaml = require('yaml');
+                protocol = yaml.parse(content);
+              }
+              
+              const generator = new SchemaGenerator();
+              const schema = generator.generateSchema(protocol);
+              const documentation = generator.generateSchemaDocumentation(schema);
+              
+              const docsPath = filePath.replace(/\.(json|ya?ml)$/, '.md');
+              fs.writeFileSync(docsPath, documentation);
+              
+              console.log(`📄 Generated documentation: ${docsPath}`);
+              return docsPath;
+            } catch (error) {
+              console.error(`Failed to generate docs for ${filePath}:`, error.message);
+              return null;
+            }
+          }
+          
+          async function main() {
+            const args = process.argv.slice(2);
+            const generatedDocs = [];
+            
+            for (const filePath of args) {
+              const docPath = await generateDocs(filePath);
+              if (docPath) {
+                generatedDocs.push(docPath);
+              }
+            }
+            
+            if (generatedDocs.length > 0) {
+              console.log('\n📚 Generated documentation files:');
+              generatedDocs.forEach(doc => console.log(`   - ${doc}`));
+            }
+          }
+          
+          main().catch(console.error);
+          EOF
+          
+          # Generate documentation for changed files
+          node generate-docs.js ${{ steps.changed-files.outputs.all_changed_files }}
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read validation results and create comment
+            let comment = '## 🔍 Community Protocol Validation Results\n\n';
+            
+            const changedFiles = '${{ steps.changed-files.outputs.all_changed_files }}'.split(' ');
+            
+            comment += `### Validated Files\n`;
+            changedFiles.forEach(file => {
+              comment += `- ✅ \`${file}\`\n`;
+            });
+            
+            comment += '\n### Validation Summary\n';
+            comment += '- ✅ Schema validation passed\n';
+            comment += '- ✅ Business logic validation passed\n';
+            comment += '- ✅ Security validation passed\n';
+            comment += '- ✅ Community system tests passed\n';
+            
+            comment += '\n### Next Steps\n';
+            comment += 'This protocol is ready for review and potential inclusion in the community protocol library.\n';
+            
+            comment += '\n---\n';
+            comment += '*This validation was performed automatically by the Community Protocol System.*';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Auto-approve if configured
+        if: github.event_name == 'pull_request' && success()
+        env:
+          COMMUNITY_AUTO_MERGE: ${{ secrets.COMMUNITY_AUTO_MERGE || 'false' }}
+        run: |
+          if [ "$COMMUNITY_AUTO_MERGE" = "true" ]; then
+            echo "Auto-approval is enabled - protocol validation successful"
+            echo "✅ This PR can be auto-merged"
+          else
+            echo "Auto-approval is disabled - manual review required"
+          fi

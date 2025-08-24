@@ -3,6 +3,7 @@ export type {
   CommunityProtocol,
   ProtocolEndpoint,
   ParameterDefinition,
+  PropertySchema,
   ResponseDefinition,
   AuthenticationConfig,
   RateLimitConfig,
@@ -13,7 +14,19 @@ export type {
   LoadedProtocol,
   GitHubSubmission,
   CommunitySystemConfig,
-} from '../../src/community/types';
+} from '../../src/community/types/index.js';
+
+// Import types for use in this file
+import type {
+  CommunityProtocol,
+  ProtocolEndpoint,
+  ParameterDefinition,
+  PropertySchema,
+  ResponseDefinition,
+  AuthenticationConfig,
+  RateLimitConfig,
+  ValidationResult,
+} from '../../src/community/types/index.js';
 
 // Additional SDK-specific types
 export interface SDKConfig {
@@ -62,8 +75,8 @@ export interface ParameterBuilder {
   setPattern(pattern: string): ParameterBuilder;
   setMinimum(min: number): ParameterBuilder;
   setMaximum(max: number): ParameterBuilder;
-  setItems(items: ParameterDefinition): ParameterBuilder;
-  setProperties(properties: Record<string, ParameterDefinition>): ParameterBuilder;
+  setItems(items: PropertySchema): ParameterBuilder;
+  setProperties(properties: Record<string, PropertySchema>): ParameterBuilder;
   build(): ParameterDefinition;
 }
 
