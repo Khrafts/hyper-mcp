@@ -5,6 +5,7 @@ import {
 import { SimpleHyperLiquidTools } from '../tools/SimpleHyperLiquidTools.js';
 import { SimpleGlueXAdapter, SimpleGlueXConfig } from '../adapters/gluex/SimpleGlueXAdapter.js';
 import { SimpleGlueXTools } from '../tools/SimpleGlueXTools.js';
+import { MarketIntelligenceTools } from '../tools/MarketIntelligenceTools.js';
 import { createComponentLogger } from '../utils/logger.js';
 import { getConfig, createConfigSections } from '../config/index.js';
 import { ToolRegistry } from './ToolRegistry.js';
@@ -23,6 +24,7 @@ export class SimpleAdapterManager {
   private hyperLiquidTools?: SimpleHyperLiquidTools;
   private glueXAdapter?: SimpleGlueXAdapter;
   private glueXTools?: SimpleGlueXTools;
+  private marketIntelligenceTools?: MarketIntelligenceTools;
   private toolRegistry: ToolRegistry;
   private config: SimpleAdapterManagerConfig;
 
@@ -84,9 +86,11 @@ export class SimpleAdapterManager {
 
       // Initialize tools
       this.hyperLiquidTools = new SimpleHyperLiquidTools(this.hyperLiquidAdapter);
+      this.marketIntelligenceTools = new MarketIntelligenceTools(this.hyperLiquidAdapter);
 
       // Register all tools
       this.registerHyperLiquidTools();
+      this.registerMarketIntelligenceTools();
 
       logger.info('HyperLiquid adapter initialized successfully', {
         metadata: this.hyperLiquidAdapter.getMetadata(),
@@ -184,6 +188,37 @@ export class SimpleAdapterManager {
     }
 
     logger.info('GlueX tools registered', {
+      tool_count: toolDefinitions.length,
+    });
+  }
+
+  private registerMarketIntelligenceTools(): void {
+    if (!this.marketIntelligenceTools) {
+      throw new Error('Market intelligence tools not initialized');
+    }
+
+    const toolDefinitions = this.marketIntelligenceTools.getToolDefinitions();
+
+    for (const toolDef of toolDefinitions) {
+      this.toolRegistry.register('market_intelligence', {
+        name: toolDef.name,
+        description: toolDef.description,
+        category: 'market_intelligence',
+        version: '1.0.0',
+        enabled: true,
+        inputSchema: toolDef.inputSchema,
+        handler: async (args: unknown): Promise<CallToolResult> => {
+          return await this.marketIntelligenceTools!.handleToolCall(toolDef.name, args);
+        },
+      });
+
+      logger.debug('Registered Market Intelligence tool', {
+        tool_name: toolDef.name,
+        description: toolDef.description,
+      });
+    }
+
+    logger.info('Market Intelligence tools registered', {
       tool_count: toolDefinitions.length,
     });
   }
@@ -299,5 +334,9 @@ export class SimpleAdapterManager {
 
   getGlueXTools(): SimpleGlueXTools | undefined {
     return this.glueXTools;
+  }
+
+  getMarketIntelligenceTools(): MarketIntelligenceTools | undefined {
+    return this.marketIntelligenceTools;
   }
 }

@@ -227,6 +227,15 @@ export class SimpleHyperLiquidTools {
           additionalProperties: false,
         },
       },
+      {
+        name: 'hyperliquid_websocket_status',
+        description: 'Get WebSocket connection status and active subscriptions',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          additionalProperties: false,
+        },
+      },
     ];
   }
 
@@ -271,6 +280,9 @@ export class SimpleHyperLiquidTools {
 
         case 'hyperliquid_get_user_fills':
           return await this.getUserFills(args);
+
+        case 'hyperliquid_websocket_status':
+          return await this.getWebSocketStatus();
 
         default:
           throw new Error(`Unknown tool: ${name}`);
@@ -749,6 +761,46 @@ export class SimpleHyperLiquidTools {
               {
                 address: parsed.address || 'default',
                 error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+  }
+
+  private async getWebSocketStatus(): Promise<CallToolResult> {
+    try {
+      const status = this.adapter.getWebSocketStatus();
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                websocket_status: status,
+                timestamp: new Date().toISOString(),
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                websocket_status: {
+                  error: error instanceof Error ? error.message : 'Unknown error',
+                },
                 timestamp: new Date().toISOString(),
               },
               null,

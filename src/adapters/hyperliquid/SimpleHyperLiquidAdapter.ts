@@ -6,6 +6,7 @@ import {
   validateAction,
   OrderAction,
 } from '../../utils/crypto.js';
+import { HyperLiquidWebSocket } from '../../websocket/HyperLiquidWebSocket.js';
 import { z } from 'zod';
 
 const logger = createComponentLogger('SIMPLE_HYPERLIQUID_ADAPTER');
@@ -26,6 +27,7 @@ export class SimpleHyperLiquidAdapter extends BaseAdapter {
   private userAddress?: string;
   private testnet: boolean;
   private signer?: HyperLiquidSigner;
+  private webSocket?: HyperLiquidWebSocket;
 
   constructor(config: SimpleHyperLiquidConfig) {
     const metadata: AdapterMetadata = {
@@ -87,6 +89,12 @@ export class SimpleHyperLiquidAdapter extends BaseAdapter {
       }
     }
 
+    // Initialize WebSocket
+    this.webSocket = new HyperLiquidWebSocket(this.wsUrl, {
+      reconnectDelay: 5000,
+      maxReconnectAttempts: 10,
+    });
+
     logger.info('SimpleHyperLiquidAdapter created', {
       base_url: config.baseUrl,
       ws_url: config.wsUrl,
@@ -104,6 +112,27 @@ export class SimpleHyperLiquidAdapter extends BaseAdapter {
     } catch (error) {
       logger.error('Failed to initialize HyperLiquid adapter', { error });
       throw error;
+    }
+  }
+
+  async connectWebSocket(): Promise<void> {
+    if (!this.webSocket) {
+      throw new Error('WebSocket not initialized');
+    }
+
+    try {
+      await this.webSocket.connect();
+      logger.info('HyperLiquid WebSocket connected');
+    } catch (error) {
+      logger.error('Failed to connect WebSocket', { error });
+      throw error;
+    }
+  }
+
+  async disconnectWebSocket(): Promise<void> {
+    if (this.webSocket) {
+      await this.webSocket.disconnect();
+      logger.info('HyperLiquid WebSocket disconnected');
     }
   }
 
@@ -408,5 +437,82 @@ export class SimpleHyperLiquidAdapter extends BaseAdapter {
 
   getSigner(): HyperLiquidSigner | undefined {
     return this.signer;
+  }
+
+  getWebSocket(): HyperLiquidWebSocket | undefined {
+    return this.webSocket;
+  }
+
+  // WebSocket subscription methods
+  subscribeToAllMids(callback: (mids: Record<string, string>) => void): string {
+    if (!this.webSocket) {
+      throw new Error('WebSocket not initialized');
+    }
+    return this.webSocket.subscribeToAllMids(callback);
+  }
+
+  subscribeToL2Book(
+    coin: string,
+    callback: (orderBook: { levels: Array<[string, string]> }) => void
+  ): string {
+    if (!this.webSocket) {
+      throw new Error('WebSocket not initialized');
+    }
+    return this.webSocket.subscribeToL2Book(coin, callback);
+  }
+
+  subscribeToTrades(coin: string, callback: (trades: any[] | undefined) => void): string {
+    if (!this.webSocket) {
+      throw new Error('WebSocket not initialized');
+    }
+    return this.webSocket.subscribeToTrades(coin, callback);
+  }
+
+  subscribeToCandles(coin: string, interval: string, callback: (candle: any) => void): string {
+    if (!this.webSocket) {
+      throw new Error('WebSocket not initialized');
+    }
+    return this.webSocket.subscribeToCandles(coin, interval, callback);
+  }
+
+  subscribeToOrderUpdates(callback: (orders: any[] | undefined) => void): string {
+    if (!this.webSocket || !this.userAddress) {
+      throw new Error('WebSocket not initialized or no user address');
+    }
+    return this.webSocket.subscribeToOrderUpdates(this.userAddress, callback);
+  }
+
+  subscribeToUserFills(callback: (fills: any[] | undefined) => void): string {
+    if (!this.webSocket || !this.userAddress) {
+      throw new Error('WebSocket not initialized or no user address');
+    }
+    return this.webSocket.subscribeToUserFills(this.userAddress, callback);
+  }
+
+  unsubscribeFromWebSocket(subscriptionId: string): void {
+    if (!this.webSocket) {
+      throw new Error('WebSocket not initialized');
+    }
+    this.webSocket.unsubscribe(subscriptionId);
+  }
+
+  getWebSocketStatus(): any {
+    if (!this.webSocket) {
+      return { connected: false, error: 'WebSocket not initialized' };
+    }
+    return this.webSocket.getStatus();
+  }
+
+  // Enhanced disconnect that includes WebSocket cleanup
+  async disconnect(): Promise<void> {
+    try {
+      await this.disconnectWebSocket();
+      // Call parent disconnect method
+      await super.disconnect();
+      logger.info('HyperLiquid adapter disconnected');
+    } catch (error) {
+      logger.error('Error during disconnect', { error });
+      throw error;
+    }
   }
 }
