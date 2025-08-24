@@ -86,7 +86,7 @@ export class HyperLiquidNodeInfoAdapter {
 
   constructor(config: NodeInfoConfig) {
     this.config = config;
-    
+
     this.httpClient = axios.create({
       baseURL: this.config.baseUrl,
       timeout: this.config.timeout,
@@ -108,16 +108,16 @@ export class HyperLiquidNodeInfoAdapter {
       }
     );
 
-    logger.info('HyperLiquidNodeInfoAdapter initialized', { 
+    logger.info('HyperLiquidNodeInfoAdapter initialized', {
       baseUrl: this.config.baseUrl,
-      timeout: this.config.timeout 
+      timeout: this.config.timeout,
     });
   }
 
   async getNodeStatus(nodeId?: string): Promise<NodeStatus> {
     try {
       const targetNodeId = nodeId || 'default';
-      
+
       // Check cache first
       const cached = this.nodeCache.get(targetNodeId);
       if (cached && Date.now() - cached.lastUpdateTime.getTime() < this.cacheTimeout) {
@@ -130,13 +130,13 @@ export class HyperLiquidNodeInfoAdapter {
       });
 
       const nodeStatus = this.parseNodeStatus(response.data, targetNodeId);
-      
+
       // Cache the result
       this.nodeCache.set(targetNodeId, nodeStatus);
-      
-      logger.info('Node status retrieved', { 
-        nodeId: targetNodeId, 
-        syncStatus: nodeStatus.syncStatus.isSynced 
+
+      logger.info('Node status retrieved', {
+        nodeId: targetNodeId,
+        syncStatus: nodeStatus.syncStatus.isSynced,
       });
 
       return nodeStatus;
@@ -153,10 +153,10 @@ export class HyperLiquidNodeInfoAdapter {
       });
 
       const networkStats = this.parseNetworkStats(response.data);
-      
-      logger.info('Network stats retrieved', { 
+
+      logger.info('Network stats retrieved', {
         totalNodes: networkStats.totalNodes,
-        consensusStatus: networkStats.consensusStatus 
+        consensusStatus: networkStats.consensusStatus,
       });
 
       return networkStats;
@@ -166,7 +166,10 @@ export class HyperLiquidNodeInfoAdapter {
     }
   }
 
-  async getValidators(page: number = 1, limit: number = 50): Promise<{
+  async getValidators(
+    page: number = 1,
+    limit: number = 50
+  ): Promise<{
     validators: ValidatorInfo[];
     pagination: {
       currentPage: number;
@@ -182,10 +185,10 @@ export class HyperLiquidNodeInfoAdapter {
       });
 
       const validatorsData = this.parseValidators(response.data);
-      
-      logger.info('Validators data retrieved', { 
-        page, 
-        count: validatorsData.validators.length 
+
+      logger.info('Validators data retrieved', {
+        page,
+        count: validatorsData.validators.length,
       });
 
       return validatorsData;
@@ -202,10 +205,10 @@ export class HyperLiquidNodeInfoAdapter {
       });
 
       const chainMetrics = this.parseChainMetrics(response.data);
-      
-      logger.info('Chain metrics retrieved', { 
+
+      logger.info('Chain metrics retrieved', {
         height: chainMetrics.height,
-        transactions24h: chainMetrics.transactions.processed24h 
+        transactions24h: chainMetrics.transactions.processed24h,
       });
 
       return chainMetrics;
@@ -278,10 +281,10 @@ export class HyperLiquidNodeInfoAdapter {
         lastChecked: new Date(),
       };
 
-      logger.info('Network health assessment completed', { 
-        status: healthReport.status, 
+      logger.info('Network health assessment completed', {
+        status: healthReport.status,
         score: healthReport.score,
-        issueCount: issues.length 
+        issueCount: issues.length,
       });
 
       return healthReport;
@@ -300,30 +303,29 @@ export class HyperLiquidNodeInfoAdapter {
     // Parse HyperLiquid API response for exchange/node status
     // Note: HyperLiquid is a centralized exchange, so we adapt the concept
     // to represent exchange API health and operational status
-    
+
     try {
       // If data contains actual API response, parse it
       const exchangeHealth = data?.exchangeHealth || {};
       const apiMetrics = data?.apiMetrics || {};
       const systemInfo = data?.systemInfo || {};
-      
+
       // Map exchange metrics to node-like status
       const nodeStatus: NodeStatus = {
         nodeId,
-        version: systemInfo.version || process.env.NODE_ENV === 'production' ? 'mainnet' : 'testnet',
+        version:
+          systemInfo.version || process.env.NODE_ENV === 'production' ? 'mainnet' : 'testnet',
         network: systemInfo.network || 'hyperliquid-mainnet',
         syncStatus: {
           // For exchange, "sync" means API responsiveness and order processing
           isSynced: exchangeHealth.healthy !== false,
           currentBlock: data?.latestBlock || Math.floor(Date.now() / 1000), // Use timestamp as block proxy
           targetBlock: data?.latestBlock || Math.floor(Date.now() / 1000),
-          syncProgress: exchangeHealth.healthy !== false ? 100 : 
-                       (exchangeHealth.degraded ? 75 : 0),
+          syncProgress: exchangeHealth.healthy !== false ? 100 : exchangeHealth.degraded ? 75 : 0,
         },
         peers: {
           // For exchange, "peers" represents connected API endpoints/load balancers
-          connected: apiMetrics.activeConnections || 
-                    (exchangeHealth.healthy ? 10 : 0),
+          connected: apiMetrics.activeConnections || (exchangeHealth.healthy ? 10 : 0),
           total: apiMetrics.maxConnections || 50,
         },
         performance: {
@@ -333,7 +335,7 @@ export class HyperLiquidNodeInfoAdapter {
           memoryUsage: systemInfo.memoryUsagePercent || 0,
           cpuUsage: systemInfo.cpuUsagePercent || 0,
         },
-        uptime: systemInfo.uptime || (Date.now() - 86400000), // Default 24h uptime
+        uptime: systemInfo.uptime || Date.now() - 86400000, // Default 24h uptime
         lastUpdateTime: new Date(),
       };
 
@@ -345,11 +347,11 @@ export class HyperLiquidNodeInfoAdapter {
 
       return nodeStatus;
     } catch (error) {
-      logger.warn('Failed to parse API response, using fallback status', { 
-        nodeId, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      logger.warn('Failed to parse API response, using fallback status', {
+        nodeId,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       // Fallback status when API response is not available
       return {
         nodeId,
@@ -380,36 +382,40 @@ export class HyperLiquidNodeInfoAdapter {
   private parseNetworkStats(data: any): NetworkStats {
     // Parse HyperLiquid exchange network statistics
     // Adapts exchange metrics to network-like statistics
-    
+
     try {
       const exchangeStats = data?.exchangeStats || {};
       const tradingVolume = data?.volume24h || {};
       const systemHealth = data?.systemHealth || {};
-      
+
       return {
         // For HyperLiquid, "nodes" represent API servers/load balancers
         totalNodes: exchangeStats.totalAPIServers || 12,
         activeNodes: exchangeStats.healthyAPIServers || 10,
-        
+
         // Network hash rate doesn't apply to centralized exchange
         networkHashRate: 'N/A (Centralized Exchange)',
-        
+
         // Average order processing time as "block time"
         averageBlockTime: exchangeStats.avgOrderProcessingTime || 0.1,
-        
+
         // Total transactions from exchange activity
         totalTransactions24h: tradingVolume.totalTrades || 0,
-        
+
         // Network difficulty doesn't apply
         networkDifficulty: 'N/A (Centralized Exchange)',
-        
+
         // Map system health to consensus status
-        consensusStatus: systemHealth.status === 'healthy' ? 'stable' : 
-                       systemHealth.status === 'degraded' ? 'unstable' : 'degraded',
+        consensusStatus:
+          systemHealth.status === 'healthy'
+            ? 'stable'
+            : systemHealth.status === 'degraded'
+              ? 'unstable'
+              : 'degraded',
       };
     } catch (error) {
       logger.warn('Failed to parse network stats, using defaults', { error });
-      
+
       // Fallback network stats for HyperLiquid exchange
       return {
         totalNodes: 12, // Reasonable estimate for exchange infrastructure
@@ -429,50 +435,52 @@ export class HyperLiquidNodeInfoAdapter {
   } {
     // Parse actual HyperLiquid validator data from validatorSummaries API
     try {
-      const validatorSummaries = Array.isArray(data) ? data : (data?.validatorSummaries || []);
-      
+      const validatorSummaries = Array.isArray(data) ? data : data?.validatorSummaries || [];
+
       if (!Array.isArray(validatorSummaries)) {
         logger.warn('Invalid validator data format, expected array');
         return this.getEmptyValidatorResponse();
       }
 
-      const validators: ValidatorInfo[] = validatorSummaries.map((validator: any, index: number) => {
-        try {
-          // Parse HyperLiquid validator summary format
-          const address = validator.validator || validator.address || `unknown_${index}`;
-          const stake = parseFloat(validator.stake || '0');
-          const commission = parseFloat(validator.commission_bps || '0') / 10000; // bps to decimal
-          
-          return {
-            address,
-            moniker: validator.name || validator.moniker || `Validator_${index}`,
-            votingPower: stake,
-            commission,
-            status: validator.jailed ? 'jailed' : 'active',
-            uptime: validator.uptime || 99.0,
-            blocks: {
-              proposed: validator.blocksProposed || 0,
-              missed: validator.blocksMissed || 0,
-            },
-            delegations: {
-              self: parseFloat(validator.selfStake || '0'),
-              total: stake,
-            },
-          };
-        } catch (error) {
-          logger.warn('Failed to parse individual validator', { index, error });
-          return {
-            address: `validator_${index}`,
-            moniker: `Unknown Validator ${index}`,
-            votingPower: 0,
-            commission: 0,
-            status: 'inactive' as const,
-            uptime: 0,
-            blocks: { proposed: 0, missed: 0 },
-            delegations: { self: 0, total: 0 },
-          };
+      const validators: ValidatorInfo[] = validatorSummaries.map(
+        (validator: any, index: number) => {
+          try {
+            // Parse HyperLiquid validator summary format
+            const address = validator.validator || validator.address || `unknown_${index}`;
+            const stake = parseFloat(validator.stake || '0');
+            const commission = parseFloat(validator.commission_bps || '0') / 10000; // bps to decimal
+
+            return {
+              address,
+              moniker: validator.name || validator.moniker || `Validator_${index}`,
+              votingPower: stake,
+              commission,
+              status: validator.jailed ? 'jailed' : 'active',
+              uptime: validator.uptime || 99.0,
+              blocks: {
+                proposed: validator.blocksProposed || 0,
+                missed: validator.blocksMissed || 0,
+              },
+              delegations: {
+                self: parseFloat(validator.selfStake || '0'),
+                total: stake,
+              },
+            };
+          } catch (error) {
+            logger.warn('Failed to parse individual validator', { index, error });
+            return {
+              address: `validator_${index}`,
+              moniker: `Unknown Validator ${index}`,
+              votingPower: 0,
+              commission: 0,
+              status: 'inactive' as const,
+              uptime: 0,
+              blocks: { proposed: 0, missed: 0 },
+              delegations: { self: 0, total: 0 },
+            };
+          }
         }
-      });
+      );
 
       const totalValidators = validators.length;
       const pageSize = 50; // Default page size
@@ -481,8 +489,8 @@ export class HyperLiquidNodeInfoAdapter {
 
       logger.info('Validator data parsed successfully', {
         validatorCount: validators.length,
-        activeValidators: validators.filter(v => v.status === 'active').length,
-        jailedValidators: validators.filter(v => v.status === 'jailed').length,
+        activeValidators: validators.filter((v) => v.status === 'active').length,
+        jailedValidators: validators.filter((v) => v.status === 'jailed').length,
       });
 
       return {
@@ -517,51 +525,65 @@ export class HyperLiquidNodeInfoAdapter {
       const tradingStats = data?.tradingStats || data?.stats24h || {};
       const userStats = data?.userStats || {};
       const volumeData = data?.volume || {};
-      
+
       return {
         // Use timestamp as "height" since HyperLiquid doesn't have blockchain height
         height: data?.timestamp || Math.floor(Date.now() / 1000),
-        
+
         // Average order processing time as "block time"
         blockTime: exchangeMetrics.avgOrderProcessingTime || 0.05, // Very fast for exchange
-        
+
         transactions: {
           // Total orders processed
-          total: parseInt(tradingStats.totalOrders || '0') || 
-                parseInt(exchangeMetrics.totalOrdersAllTime || '0') || 0,
-          
+          total:
+            parseInt(tradingStats.totalOrders || '0') ||
+            parseInt(exchangeMetrics.totalOrdersAllTime || '0') ||
+            0,
+
           // Pending orders in order book
-          pending: parseInt(tradingStats.pendingOrders || '0') || 
-                  parseInt(exchangeMetrics.openOrders || '0') || 0,
-          
+          pending:
+            parseInt(tradingStats.pendingOrders || '0') ||
+            parseInt(exchangeMetrics.openOrders || '0') ||
+            0,
+
           // Orders processed in last 24h
-          processed24h: parseInt(tradingStats.orders24h || '0') || 
-                       parseInt(tradingStats.totalTrades || '0') || 0,
+          processed24h:
+            parseInt(tradingStats.orders24h || '0') ||
+            parseInt(tradingStats.totalTrades || '0') ||
+            0,
         },
-        
+
         accounts: {
           // Total registered users
-          total: parseInt(userStats.totalUsers || '0') || 
-                parseInt(exchangeMetrics.totalAccounts || '0') || 0,
-          
+          total:
+            parseInt(userStats.totalUsers || '0') ||
+            parseInt(exchangeMetrics.totalAccounts || '0') ||
+            0,
+
           // Active traders in 24h
-          active24h: parseInt(userStats.activeUsers24h || '0') || 
-                    parseInt(tradingStats.activeTraders24h || '0') || 0,
+          active24h:
+            parseInt(userStats.activeUsers24h || '0') ||
+            parseInt(tradingStats.activeTraders24h || '0') ||
+            0,
         },
-        
+
         volume: {
           // Trading volume in last 24h (USD)
-          total24h: parseFloat(volumeData.volume24h || '0') || 
-                   parseFloat(tradingStats.volume24hUsd || '0') || 0,
-          
+          total24h:
+            parseFloat(volumeData.volume24h || '0') ||
+            parseFloat(tradingStats.volume24hUsd || '0') ||
+            0,
+
           // All-time trading volume
-          totalAllTime: parseFloat(volumeData.volumeAllTime || '0') || 
-                       parseFloat(exchangeMetrics.totalVolumeUsd || '0') || 0,
+          totalAllTime:
+            parseFloat(volumeData.volumeAllTime || '0') ||
+            parseFloat(exchangeMetrics.totalVolumeUsd || '0') ||
+            0,
         },
       };
     } catch (error) {
       logger.warn('Failed to parse chain metrics, using defaults', { error });
-      
+
       // Fallback metrics for HyperLiquid exchange
       const now = Math.floor(Date.now() / 1000);
       return {
@@ -621,7 +643,7 @@ export class HyperLiquidNodeInfoAdapter {
       timeout: this.config.timeout,
       features: [
         'node_status',
-        'network_stats', 
+        'network_stats',
         'validator_info',
         'chain_metrics',
         'health_monitoring',

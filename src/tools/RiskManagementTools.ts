@@ -46,7 +46,8 @@ export class RiskManagementTools {
       },
       {
         name: 'risk_get_portfolio_analysis',
-        description: 'Get comprehensive portfolio risk analysis including VaR, stress tests, and correlations',
+        description:
+          'Get comprehensive portfolio risk analysis including VaR, stress tests, and correlations',
         inputSchema: {
           type: 'object',
           properties: {
@@ -296,7 +297,7 @@ export class RiskManagementTools {
                   concentrationImpact: `${(riskCheck.riskMetrics.concentrationImpact * 100).toFixed(2)}%`,
                   liquidationRisk: `${(riskCheck.riskMetrics.liquidationRisk * 100).toFixed(2)}%`,
                 },
-                recommendation: riskCheck.approved 
+                recommendation: riskCheck.approved
                   ? 'Order can proceed with noted warnings'
                   : 'Order should be rejected or modified',
                 timestamp: new Date().toISOString(),
@@ -360,16 +361,16 @@ export class RiskManagementTools {
                     sharpeRatio: portfolioRisk.sharpeRatio.toFixed(3),
                     sortino: portfolioRisk.sortino.toFixed(3),
                   },
-                  positions: portfolioRisk.positions.map(pos => ({
+                  positions: portfolioRisk.positions.map((pos) => ({
                     symbol: pos.symbol,
                     size: pos.size,
                     currentPrice: `$${pos.currentPrice.toFixed(2)}`,
                     unrealizedPnl: `$${pos.unrealizedPnl.toFixed(2)}`,
                     riskScore: `${pos.riskScore.toFixed(1)}/100`,
                     var95: `$${pos.var95.toFixed(2)}`,
-                    concentration: `${(pos.concentration / portfolioRisk.totalValue * 100).toFixed(2)}%`,
+                    concentration: `${((pos.concentration / portfolioRisk.totalValue) * 100).toFixed(2)}%`,
                   })),
-                  stressTests: portfolioRisk.stressTestResults.map(test => ({
+                  stressTests: portfolioRisk.stressTestResults.map((test) => ({
                     scenario: test.scenario,
                     description: test.description,
                     impact: `$${test.portfolioImpact.toFixed(2)} (${test.impactPercent.toFixed(2)}%)`,
@@ -536,7 +537,7 @@ export class RiskManagementTools {
             text: JSON.stringify(
               {
                 action: 'get_risk_alerts',
-                alerts: activeAlerts.map(alert => ({
+                alerts: activeAlerts.map((alert) => ({
                   id: alert.id,
                   type: alert.type,
                   severity: alert.severity,
@@ -600,7 +601,9 @@ export class RiskManagementTools {
                 action: 'resolve_alert',
                 alertId: parsed.alertId,
                 resolved,
-                message: resolved ? 'Alert resolved successfully' : 'Alert not found or already resolved',
+                message: resolved
+                  ? 'Alert resolved successfully'
+                  : 'Alert not found or already resolved',
                 timestamp: new Date().toISOString(),
               },
               null,
@@ -633,18 +636,22 @@ export class RiskManagementTools {
 
   private async performStressTest(args: unknown): Promise<CallToolResult> {
     const schema = z.object({
-      scenarios: z.array(z.object({
-        name: z.string(),
-        description: z.string(),
-        marketShock: z.number().min(-1).max(1),
-      })).optional(),
+      scenarios: z
+        .array(
+          z.object({
+            name: z.string(),
+            description: z.string(),
+            marketShock: z.number().min(-1).max(1),
+          })
+        )
+        .optional(),
     });
 
     const parsed = schema.parse(args);
 
     try {
       const portfolioRisk = await this.riskEngine.calculatePortfolioRisk();
-      
+
       // Use provided scenarios or default ones
       const scenarios = parsed.scenarios || [
         { name: 'Market Crash', description: '30% market decline', marketShock: -0.3 },
@@ -652,10 +659,10 @@ export class RiskManagementTools {
         { name: 'Bull Run', description: '25% market surge', marketShock: 0.25 },
       ];
 
-      const customResults = scenarios.map(scenario => {
+      const customResults = scenarios.map((scenario) => {
         const portfolioImpact = portfolioRisk.positions.reduce((total, position) => {
           const positionValue = Math.abs(position.size * position.currentPrice);
-          return total + (positionValue * scenario.marketShock);
+          return total + positionValue * scenario.marketShock;
         }, 0);
 
         const impactPercent = (portfolioImpact / portfolioRisk.totalValue) * 100;
@@ -679,7 +686,7 @@ export class RiskManagementTools {
                 action: 'portfolio_stress_test',
                 currentPortfolioValue: `$${portfolioRisk.totalValue.toFixed(2)}`,
                 scenarios: customResults,
-                standardStressTests: portfolioRisk.stressTestResults.map(test => ({
+                standardStressTests: portfolioRisk.stressTestResults.map((test) => ({
                   scenario: test.scenario,
                   description: test.description,
                   impact: `$${test.portfolioImpact.toFixed(2)} (${test.impactPercent.toFixed(2)}%)`,
@@ -728,9 +735,10 @@ export class RiskManagementTools {
                     totalAlerts: statistics.totalAlerts,
                     activeAlerts: statistics.activeAlerts,
                     resolvedAlerts: statistics.resolvedAlerts,
-                    resolutionRate: statistics.totalAlerts > 0 
-                      ? `${((statistics.resolvedAlerts / statistics.totalAlerts) * 100).toFixed(1)}%`
-                      : 'N/A',
+                    resolutionRate:
+                      statistics.totalAlerts > 0
+                        ? `${((statistics.resolvedAlerts / statistics.totalAlerts) * 100).toFixed(1)}%`
+                        : 'N/A',
                   },
                   alertsByType: statistics.alertsByType,
                   alertsBySeverity: statistics.alertsBySeverity,
@@ -777,20 +785,24 @@ export class RiskManagementTools {
       switch (parsed.action) {
         case 'start':
           await this.riskEngine.start();
-          result = { status: 'started', message: 'Risk management engine is now monitoring portfolio' };
+          result = {
+            status: 'started',
+            message: 'Risk management engine is now monitoring portfolio',
+          };
           break;
         case 'stop':
           await this.riskEngine.stop();
           result = { status: 'stopped', message: 'Risk management engine monitoring paused' };
           break;
-        case 'status':
+        case 'status': {
           const activeAlerts = this.riskEngine.getActiveAlerts();
-          result = { 
+          result = {
             status: 'running',
             activeAlerts: activeAlerts.length,
-            criticalAlerts: activeAlerts.filter(a => a.severity === 'critical').length,
+            criticalAlerts: activeAlerts.filter((a) => a.severity === 'critical').length,
           };
           break;
+        }
       }
 
       return {

@@ -292,9 +292,9 @@ export class MarketIntelligence {
   private parseCandleData(candleData: unknown): CandleData[] {
     // Parse actual HyperLiquid API candle response format
     if (!Array.isArray(candleData)) {
-      logger.error('Invalid candle data format - expected array', { 
+      logger.error('Invalid candle data format - expected array', {
         type: typeof candleData,
-        isArray: Array.isArray(candleData) 
+        isArray: Array.isArray(candleData),
       });
       throw new Error('Invalid candle data format from HyperLiquid API');
     }
@@ -306,44 +306,47 @@ export class MarketIntelligence {
 
     try {
       // HyperLiquid candle format: { T, c, h, i, l, n, o, s, t, v }
-      return candleData.map((candle: any, index: number) => {
-        if (!candle || typeof candle !== 'object') {
-          throw new Error(`Invalid candle object at index ${index}`);
-        }
+      return candleData
+        .map((candle: any, index: number) => {
+          if (!candle || typeof candle !== 'object') {
+            throw new Error(`Invalid candle object at index ${index}`);
+          }
 
-        const parsed = {
-          timestamp: parseInt(candle.T) || parseInt(candle.t) || Date.now(),
-          open: parseFloat(candle.o) || 0,
-          high: parseFloat(candle.h) || 0,
-          low: parseFloat(candle.l) || 0,
-          close: parseFloat(candle.c) || 0,
-          volume: parseFloat(candle.v) || 0,
-        };
+          const parsed = {
+            timestamp: parseInt(candle.T) || parseInt(candle.t) || Date.now(),
+            open: parseFloat(candle.o) || 0,
+            high: parseFloat(candle.h) || 0,
+            low: parseFloat(candle.l) || 0,
+            close: parseFloat(candle.c) || 0,
+            volume: parseFloat(candle.v) || 0,
+          };
 
-        // Validate parsed candle data
-        if (parsed.high < parsed.low || parsed.open <= 0 || parsed.close <= 0) {
-          logger.warn('Invalid candle price data detected', { 
-            index, 
-            candle: parsed,
-            symbol: candle.s 
-          });
-        }
+          // Validate parsed candle data
+          if (parsed.high < parsed.low || parsed.open <= 0 || parsed.close <= 0) {
+            logger.warn('Invalid candle price data detected', {
+              index,
+              candle: parsed,
+              symbol: candle.s,
+            });
+          }
 
-        return parsed;
-      }).filter(candle => candle.open > 0 && candle.close > 0); // Filter out invalid candles
+          return parsed;
+        })
+        .filter((candle) => candle.open > 0 && candle.close > 0); // Filter out invalid candles
     } catch (error) {
       logger.error('Failed to parse candle data from HyperLiquid API', { error });
-      throw new Error(`Candle data parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Candle data parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
-
 
   private parseAccountState(accountState: unknown): any {
     // Parse actual HyperLiquid account state response format
     if (!accountState || typeof accountState !== 'object') {
-      logger.error('Invalid account state format', { 
+      logger.error('Invalid account state format', {
         type: typeof accountState,
-        isNull: accountState === null 
+        isNull: accountState === null,
       });
       throw new Error('Invalid account state data from HyperLiquid API');
     }
@@ -378,35 +381,40 @@ export class MarketIntelligence {
       const withdrawable = parseFloat(clearinghouseState.withdrawable || '0');
 
       // Parse positions
-      const positions = assetPositions.map((position: any, index: number) => {
-        const symbol = position.coin || position.symbol || `UNKNOWN_${index}`;
-        const positionSize = parseFloat(position.szi || position.size || '0');
-        const entryPrice = parseFloat(position.entryPx || position.entryPrice || '0');
-        const unrealizedPnl = parseFloat(position.unrealizedPnl || '0');
-        
-        // Calculate current price from unrealized PnL if available
-        let currentPrice = entryPrice;
-        if (positionSize !== 0 && unrealizedPnl !== 0) {
-          currentPrice = entryPrice + (unrealizedPnl / positionSize);
-        }
+      const positions = assetPositions
+        .map((position: any, index: number) => {
+          const symbol = position.coin || position.symbol || `UNKNOWN_${index}`;
+          const positionSize = parseFloat(position.szi || position.size || '0');
+          const entryPrice = parseFloat(position.entryPx || position.entryPrice || '0');
+          const unrealizedPnl = parseFloat(position.unrealizedPnl || '0');
 
-        const pnlPercent = entryPrice > 0 ? ((currentPrice - entryPrice) / entryPrice) * 100 : 0;
+          // Calculate current price from unrealized PnL if available
+          let currentPrice = entryPrice;
+          if (positionSize !== 0 && unrealizedPnl !== 0) {
+            currentPrice = entryPrice + unrealizedPnl / positionSize;
+          }
 
-        return {
-          symbol,
-          size: positionSize,
-          entryPrice,
-          currentPrice,
-          unrealizedPnl,
-          pnlPercent,
-          marginUsed: parseFloat(position.marginUsed || '0'),
-          maxTradeSzs: position.maxTradeSzs || [],
-        };
-      }).filter((pos: any) => pos.size !== 0); // Filter out zero positions
+          const pnlPercent = entryPrice > 0 ? ((currentPrice - entryPrice) / entryPrice) * 100 : 0;
+
+          return {
+            symbol,
+            size: positionSize,
+            entryPrice,
+            currentPrice,
+            unrealizedPnl,
+            pnlPercent,
+            marginUsed: parseFloat(position.marginUsed || '0'),
+            maxTradeSzs: position.maxTradeSzs || [],
+          };
+        })
+        .filter((pos: any) => pos.size !== 0); // Filter out zero positions
 
       // Calculate total unrealized PnL
-      const totalUnrealizedPnl = positions.reduce((sum: number, pos: any) => sum + pos.unrealizedPnl, 0);
-      
+      const totalUnrealizedPnl = positions.reduce(
+        (sum: number, pos: any) => sum + pos.unrealizedPnl,
+        0
+      );
+
       // Calculate realized PnL (not directly available, estimate from total value changes)
       const realizedPnl = totalValue - totalRawUsd - totalUnrealizedPnl;
 
@@ -433,7 +441,9 @@ export class MarketIntelligence {
       return portfolioData;
     } catch (error) {
       logger.error('Failed to parse HyperLiquid account state', { error });
-      throw new Error(`Account state parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Account state parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 

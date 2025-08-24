@@ -32,7 +32,7 @@ describe('ExecutionTools Basic Tests', () => {
 
     it('should include all required execution tools', () => {
       const definitions = executionTools.getToolDefinitions();
-      const toolNames = definitions.map(def => def.name);
+      const toolNames = definitions.map((def) => def.name);
 
       expect(toolNames).toContain('execution_submit_order');
       expect(toolNames).toContain('execution_cancel_order');
@@ -45,8 +45,8 @@ describe('ExecutionTools Basic Tests', () => {
 
     it('should have proper schema definitions', () => {
       const definitions = executionTools.getToolDefinitions();
-      
-      definitions.forEach(def => {
+
+      definitions.forEach((def) => {
         expect(def).toHaveProperty('name');
         expect(def).toHaveProperty('description');
         expect(def).toHaveProperty('inputSchema');
@@ -65,7 +65,7 @@ describe('ExecutionTools Basic Tests', () => {
       expect(result.isError).toBeUndefined();
       expect(result.content).toHaveLength(1);
       expect(result.content[0]?.type).toBe('text');
-      
+
       if (result.content[0] && 'text' in result.content[0]) {
         const responseData = JSON.parse(result.content[0].text as string);
         expect(responseData.action).toBe('list_active_orders');
@@ -87,7 +87,7 @@ describe('ExecutionTools Basic Tests', () => {
       const result = await executionTools.handleToolCall('execution_get_statistics', {});
 
       expect(result.isError).toBeUndefined();
-      
+
       if (result.content[0] && 'text' in result.content[0]) {
         const responseData = JSON.parse(result.content[0].text as string);
         expect(responseData.action).toBe('get_execution_statistics');
@@ -103,7 +103,7 @@ describe('ExecutionTools Basic Tests', () => {
       });
 
       expect(result.isError).toBeUndefined();
-      
+
       if (result.content[0] && 'text' in result.content[0]) {
         const responseData = JSON.parse(result.content[0].text as string);
         expect(responseData.action).toBe('execution_engine_control');
@@ -118,7 +118,7 @@ describe('ExecutionTools Basic Tests', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0]?.type).toBe('text');
-      
+
       if (result.content[0] && 'text' in result.content[0]) {
         expect(result.content[0].text).toContain('Unknown execution tool: unknown_tool');
       }

@@ -31,7 +31,7 @@ describe('RiskManagementEngine Basic Tests', () => {
         maxPositionSize: 200000,
         maxLeverage: 5,
       });
-      
+
       const limits = customRiskEngine.getRiskLimits();
       expect(limits.maxPositionSize).toBe(200000);
       expect(limits.maxLeverage).toBe(5);
@@ -101,7 +101,7 @@ describe('RiskManagementEngine Basic Tests', () => {
   describe('Error Handling', () => {
     it('should handle missing price data gracefully', async () => {
       mockAdapter.getAllMids.mockResolvedValue({});
-      
+
       const price = await (riskEngine as any).getCurrentPrice('UNKNOWN');
       expect(price).toBe(0);
     });

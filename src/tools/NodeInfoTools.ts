@@ -22,7 +22,8 @@ export class NodeInfoTools {
           properties: {
             nodeId: {
               type: 'string',
-              description: 'Specific node ID to query (optional, uses default node if not provided)',
+              description:
+                'Specific node ID to query (optional, uses default node if not provided)',
             },
           },
           additionalProperties: false,
@@ -167,7 +168,8 @@ export class NodeInfoTools {
                     progress: `${nodeStatus.syncStatus.syncProgress.toFixed(2)}%`,
                     currentBlock: nodeStatus.syncStatus.currentBlock.toLocaleString(),
                     targetBlock: nodeStatus.syncStatus.targetBlock.toLocaleString(),
-                    blocksBehind: nodeStatus.syncStatus.targetBlock - nodeStatus.syncStatus.currentBlock,
+                    blocksBehind:
+                      nodeStatus.syncStatus.targetBlock - nodeStatus.syncStatus.currentBlock,
                   },
                   connectivity: {
                     connectedPeers: nodeStatus.peers.connected,
@@ -291,7 +293,7 @@ export class NodeInfoTools {
             text: JSON.stringify(
               {
                 action: 'get_validators',
-                validators: validatorsData.validators.map(validator => ({
+                validators: validatorsData.validators.map((validator) => ({
                   address: validator.address,
                   moniker: validator.moniker,
                   status: validator.status,
@@ -304,9 +306,10 @@ export class NodeInfoTools {
                     uptime: `${validator.uptime.toFixed(2)}%`,
                     blocksProposed: validator.blocks.proposed,
                     blocksMissed: validator.blocks.missed,
-                    missedRatio: validator.blocks.proposed > 0 
-                      ? `${((validator.blocks.missed / (validator.blocks.proposed + validator.blocks.missed)) * 100).toFixed(2)}%`
-                      : '0%',
+                    missedRatio:
+                      validator.blocks.proposed > 0
+                        ? `${((validator.blocks.missed / (validator.blocks.proposed + validator.blocks.missed)) * 100).toFixed(2)}%`
+                        : '0%',
                   },
                   delegations: {
                     selfDelegation: validator.delegations.self.toLocaleString(),
@@ -318,13 +321,16 @@ export class NodeInfoTools {
                   currentPage: validatorsData.pagination.currentPage,
                   totalPages: validatorsData.pagination.totalPages,
                   totalValidators: validatorsData.pagination.totalValidators,
-                  hasNextPage: validatorsData.pagination.currentPage < validatorsData.pagination.totalPages,
+                  hasNextPage:
+                    validatorsData.pagination.currentPage < validatorsData.pagination.totalPages,
                   hasPreviousPage: validatorsData.pagination.currentPage > 1,
                 },
                 summary: {
                   displayedCount: validatorsData.validators.length,
-                  totalActiveValidators: validatorsData.validators.filter(v => v.status === 'active').length,
-                  averageCommission: `${(validatorsData.validators.reduce((sum, v) => sum + v.commission, 0) / validatorsData.validators.length * 100).toFixed(2)}%`,
+                  totalActiveValidators: validatorsData.validators.filter(
+                    (v) => v.status === 'active'
+                  ).length,
+                  averageCommission: `${((validatorsData.validators.reduce((sum, v) => sum + v.commission, 0) / validatorsData.validators.length) * 100).toFixed(2)}%`,
                 },
                 timestamp: new Date().toISOString(),
               },
@@ -377,7 +383,9 @@ export class NodeInfoTools {
                     total: chainMetrics.transactions.total.toLocaleString(),
                     pending: chainMetrics.transactions.pending.toLocaleString(),
                     processed24h: chainMetrics.transactions.processed24h.toLocaleString(),
-                    averagePerBlock: Math.round(chainMetrics.transactions.processed24h / (86400 / chainMetrics.blockTime)),
+                    averagePerBlock: Math.round(
+                      chainMetrics.transactions.processed24h / (86400 / chainMetrics.blockTime)
+                    ),
                     throughputTPS: Math.round(chainMetrics.transactions.processed24h / 86400),
                   },
                   accounts: {
@@ -434,7 +442,8 @@ export class NodeInfoTools {
                   overallStatus: healthReport.status,
                   healthScore: `${healthReport.score}/100`,
                   statusDescription: this.getHealthDescription(healthReport.status),
-                  issues: healthReport.issues.length > 0 ? healthReport.issues : ['No issues detected'],
+                  issues:
+                    healthReport.issues.length > 0 ? healthReport.issues : ['No issues detected'],
                   issueCount: healthReport.issues.length,
                   recommendations: this.generateHealthRecommendations(healthReport),
                   lastAssessment: healthReport.lastChecked.toISOString(),
@@ -481,7 +490,9 @@ export class NodeInfoTools {
         this.nodeInfoAdapter.getNetworkHealth(),
       ]);
 
-      const performanceAlerts = parsed.includeAlerts ? this.generatePerformanceAlerts(nodeStatus) : [];
+      const performanceAlerts = parsed.includeAlerts
+        ? this.generatePerformanceAlerts(nodeStatus)
+        : [];
 
       return {
         content: [
@@ -495,21 +506,37 @@ export class NodeInfoTools {
                   sync: {
                     status: nodeStatus.syncStatus.isSynced ? 'healthy' : 'warning',
                     progress: nodeStatus.syncStatus.syncProgress,
-                    blocksBehind: nodeStatus.syncStatus.targetBlock - nodeStatus.syncStatus.currentBlock,
+                    blocksBehind:
+                      nodeStatus.syncStatus.targetBlock - nodeStatus.syncStatus.currentBlock,
                   },
                   resources: {
                     cpu: {
                       usage: nodeStatus.performance.cpuUsage,
-                      status: nodeStatus.performance.cpuUsage < 80 ? 'healthy' : nodeStatus.performance.cpuUsage < 95 ? 'warning' : 'critical',
+                      status:
+                        nodeStatus.performance.cpuUsage < 80
+                          ? 'healthy'
+                          : nodeStatus.performance.cpuUsage < 95
+                            ? 'warning'
+                            : 'critical',
                     },
                     memory: {
                       usage: nodeStatus.performance.memoryUsage,
-                      status: nodeStatus.performance.memoryUsage < 80 ? 'healthy' : nodeStatus.performance.memoryUsage < 90 ? 'warning' : 'critical',
+                      status:
+                        nodeStatus.performance.memoryUsage < 80
+                          ? 'healthy'
+                          : nodeStatus.performance.memoryUsage < 90
+                            ? 'warning'
+                            : 'critical',
                     },
                   },
                   connectivity: {
                     peers: nodeStatus.peers.connected,
-                    status: nodeStatus.peers.connected >= 10 ? 'healthy' : nodeStatus.peers.connected >= 5 ? 'warning' : 'critical',
+                    status:
+                      nodeStatus.peers.connected >= 10
+                        ? 'healthy'
+                        : nodeStatus.peers.connected >= 5
+                          ? 'warning'
+                          : 'critical',
                   },
                   throughput: {
                     blocksPerSecond: nodeStatus.performance.blocksPerSecond,
@@ -556,51 +583,63 @@ export class NodeInfoTools {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    
+
     return `${days}d ${hours}h ${minutes}m`;
   }
 
   private getConsensusDescription(status: string): string {
     switch (status) {
-      case 'stable': return 'Network consensus is operating normally with consistent block production';
-      case 'unstable': return 'Network consensus is experiencing minor issues but remains functional';
-      case 'degraded': return 'Network consensus is significantly impacted with potential delays';
-      default: return 'Unknown consensus status';
+      case 'stable':
+        return 'Network consensus is operating normally with consistent block production';
+      case 'unstable':
+        return 'Network consensus is experiencing minor issues but remains functional';
+      case 'degraded':
+        return 'Network consensus is significantly impacted with potential delays';
+      default:
+        return 'Unknown consensus status';
     }
   }
 
   private getHealthDescription(status: string): string {
     switch (status) {
-      case 'healthy': return 'Network is operating optimally with no significant issues';
-      case 'degraded': return 'Network has some performance issues but remains functional';
-      case 'unhealthy': return 'Network is experiencing significant problems affecting operation';
-      default: return 'Unknown health status';
+      case 'healthy':
+        return 'Network is operating optimally with no significant issues';
+      case 'degraded':
+        return 'Network has some performance issues but remains functional';
+      case 'unhealthy':
+        return 'Network is experiencing significant problems affecting operation';
+      default:
+        return 'Unknown health status';
     }
   }
 
   private generateHealthRecommendations(healthReport: any): string[] {
     const recommendations: string[] = [];
-    
+
     if (healthReport.score < 50) {
       recommendations.push('Consider restarting affected nodes or checking network connectivity');
     }
-    
+
     if (healthReport.issues.some((issue: string) => issue.includes('CPU'))) {
       recommendations.push('Monitor CPU usage and consider scaling resources if sustained');
     }
-    
+
     if (healthReport.issues.some((issue: string) => issue.includes('memory'))) {
       recommendations.push('Check for memory leaks and consider increasing available memory');
     }
-    
+
     if (healthReport.issues.some((issue: string) => issue.includes('peer'))) {
-      recommendations.push('Check firewall settings and network connectivity to improve peer connections');
+      recommendations.push(
+        'Check firewall settings and network connectivity to improve peer connections'
+      );
     }
-    
+
     if (recommendations.length === 0) {
-      recommendations.push('Continue monitoring network performance and maintain current configuration');
+      recommendations.push(
+        'Continue monitoring network performance and maintain current configuration'
+      );
     }
-    
+
     return recommendations;
   }
 

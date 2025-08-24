@@ -152,24 +152,30 @@ export class RiskManagementEngine extends EventEmitter {
   ): Promise<OrderRiskCheck> {
     try {
       const currentPortfolio = await this.calculatePortfolioRisk();
-      const orderValue = quantity * (price || await this.getCurrentPrice(symbol));
+      const orderValue = quantity * (price || (await this.getCurrentPrice(symbol)));
 
       const warnings: string[] = [];
       const rejectionReasons: string[] = [];
 
       if (orderValue > this.riskLimits.maxOrderValue) {
-        rejectionReasons.push(`Order value ${orderValue} exceeds limit ${this.riskLimits.maxOrderValue}`);
+        rejectionReasons.push(
+          `Order value ${orderValue} exceeds limit ${this.riskLimits.maxOrderValue}`
+        );
       }
 
-      const existingPosition = currentPortfolio.positions.find(p => p.symbol === symbol);
-      const newSize = existingPosition 
+      const existingPosition = currentPortfolio.positions.find((p) => p.symbol === symbol);
+      const newSize = existingPosition
         ? existingPosition.size + (side === 'buy' ? quantity : -quantity)
-        : (side === 'buy' ? quantity : -quantity);
+        : side === 'buy'
+          ? quantity
+          : -quantity;
 
-      const newPositionValue = Math.abs(newSize) * (price || await this.getCurrentPrice(symbol));
-      
+      const newPositionValue = Math.abs(newSize) * (price || (await this.getCurrentPrice(symbol)));
+
       if (newPositionValue > this.riskLimits.maxPositionSize) {
-        rejectionReasons.push(`New position size ${newPositionValue} exceeds limit ${this.riskLimits.maxPositionSize}`);
+        rejectionReasons.push(
+          `New position size ${newPositionValue} exceeds limit ${this.riskLimits.maxPositionSize}`
+        );
       }
 
       const newConcentration = newPositionValue / (currentPortfolio.totalValue + orderValue);
@@ -186,7 +192,9 @@ export class RiskManagementEngine extends EventEmitter {
       };
 
       if (simulatedVar > this.riskLimits.varLimit) {
-        rejectionReasons.push(`Order would increase portfolio VaR to ${simulatedVar}, exceeding limit ${this.riskLimits.varLimit}`);
+        rejectionReasons.push(
+          `Order would increase portfolio VaR to ${simulatedVar}, exceeding limit ${this.riskLimits.varLimit}`
+        );
       }
 
       return {
@@ -218,10 +226,13 @@ export class RiskManagementEngine extends EventEmitter {
       const currentPrices = await this.adapter.getAllMids();
 
       const positionRisks = await Promise.all(
-        positions.map(position => this.calculatePositionRisk(position, currentPrices))
+        positions.map((position) => this.calculatePositionRisk(position, currentPrices))
       );
 
-      const totalValue = positionRisks.reduce((sum, pos) => sum + Math.abs(pos.size * pos.currentPrice), 0);
+      const totalValue = positionRisks.reduce(
+        (sum, pos) => sum + Math.abs(pos.size * pos.currentPrice),
+        0
+      );
       const portfolioVar95 = await this.calculatePortfolioVaR(positionRisks, 0.95);
       const portfolioVar99 = await this.calculatePortfolioVaR(positionRisks, 0.99);
 
@@ -231,7 +242,7 @@ export class RiskManagementEngine extends EventEmitter {
       const maxDrawdown = this.calculateMaxDrawdown(returns);
 
       const correlationMatrix = await this.calculateCorrelationMatrix(
-        positionRisks.map(p => p.symbol)
+        positionRisks.map((p) => p.symbol)
       );
 
       const stressTestResults = await this.performStressTests(positionRisks);
@@ -255,10 +266,13 @@ export class RiskManagementEngine extends EventEmitter {
     }
   }
 
-  private async calculatePositionRisk(position: any, currentPrices: Record<string, string>): Promise<PositionRisk> {
+  private async calculatePositionRisk(
+    position: any,
+    currentPrices: Record<string, string>
+  ): Promise<PositionRisk> {
     const currentPrice = parseFloat(currentPrices[position.symbol] || '0') || position.entryPrice;
     const positionValue = Math.abs(position.size * currentPrice);
-    
+
     const returns = this.returns.get(position.symbol) || [];
     const var95 = this.calculateVaR(returns, 0.95) * positionValue;
     const var99 = this.calculateVaR(returns, 0.99) * positionValue;
@@ -293,18 +307,24 @@ export class RiskManagementEngine extends EventEmitter {
     const sortedReturns = [...returns].sort((a, b) => a - b);
     const cutoffIndex = Math.floor((1 - confidence) * sortedReturns.length);
     const tailReturns = sortedReturns.slice(0, cutoffIndex);
-    
-    return tailReturns.length > 0 
+
+    return tailReturns.length > 0
       ? Math.abs(tailReturns.reduce((sum, ret) => sum + ret, 0) / tailReturns.length)
       : 0;
   }
 
-  private async calculatePortfolioVaR(positions: PositionRisk[], confidence: number): Promise<number> {
+  private async calculatePortfolioVaR(
+    positions: PositionRisk[],
+    confidence: number
+  ): Promise<number> {
     // Simplified portfolio VaR using correlation
-    const positionVaRs = positions.map(p => confidence === 0.95 ? p.var95 : p.var99);
+    const positionVaRs = positions.map((p) => (confidence === 0.95 ? p.var95 : p.var99));
     const correlationAdjustment = 0.8; // Simplified correlation factor
-    
-    return Math.sqrt(positionVaRs.reduce((sum, varValue) => sum + varValue * varValue, 0)) * correlationAdjustment;
+
+    return (
+      Math.sqrt(positionVaRs.reduce((sum, varValue) => sum + varValue * varValue, 0)) *
+      correlationAdjustment
+    );
   }
 
   private calculateSharpeRatio(returns: number[]): number {
@@ -322,8 +342,8 @@ export class RiskManagementEngine extends EventEmitter {
     if (returns.length < 2) return 0;
 
     const meanReturn = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
-    const downwardReturns = returns.filter(ret => ret < 0);
-    
+    const downwardReturns = returns.filter((ret) => ret < 0);
+
     if (downwardReturns.length === 0) return Infinity;
 
     const downsideDeviation = Math.sqrt(
@@ -350,7 +370,9 @@ export class RiskManagementEngine extends EventEmitter {
     return maxDrawdown;
   }
 
-  private async calculateCorrelationMatrix(symbols: string[]): Promise<Record<string, Record<string, number>>> {
+  private async calculateCorrelationMatrix(
+    symbols: string[]
+  ): Promise<Record<string, Record<string, number>>> {
     const matrix: Record<string, Record<string, number>> = {};
 
     for (const symbol1 of symbols) {
@@ -393,7 +415,7 @@ export class RiskManagementEngine extends EventEmitter {
     const stdDev1 = Math.sqrt(variance1 / (n - 1));
     const stdDev2 = Math.sqrt(variance2 / (n - 1));
 
-    return (stdDev1 * stdDev2) !== 0 ? covariance / (n - 1) / (stdDev1 * stdDev2) : 0;
+    return stdDev1 * stdDev2 !== 0 ? covariance / (n - 1) / (stdDev1 * stdDev2) : 0;
   }
 
   private async performStressTests(positions: PositionRisk[]): Promise<StressTestResult[]> {
@@ -404,8 +426,8 @@ export class RiskManagementEngine extends EventEmitter {
       { name: 'Sector Rotation', description: 'Major sector weakness', factor: -0.2 },
     ];
 
-    return stressScenarios.map(scenario => {
-      const positionImpacts = positions.map(position => {
+    return stressScenarios.map((scenario) => {
+      const positionImpacts = positions.map((position) => {
         const impact = position.size * position.currentPrice * scenario.factor;
         return {
           symbol: position.symbol,
@@ -415,7 +437,10 @@ export class RiskManagementEngine extends EventEmitter {
       });
 
       const portfolioImpact = positionImpacts.reduce((sum, impact) => sum + impact.impact, 0);
-      const totalValue = positions.reduce((sum, pos) => sum + Math.abs(pos.size * pos.currentPrice), 0);
+      const totalValue = positions.reduce(
+        (sum, pos) => sum + Math.abs(pos.size * pos.currentPrice),
+        0
+      );
 
       return {
         scenario: scenario.name,
@@ -451,7 +476,7 @@ export class RiskManagementEngine extends EventEmitter {
     }
 
     // Check position concentration
-    portfolioRisk.positions.forEach(position => {
+    portfolioRisk.positions.forEach((position) => {
       const concentration = position.concentration / portfolioRisk.totalValue;
       if (concentration > this.riskLimits.maxConcentration) {
         this.createAlert({
@@ -468,14 +493,14 @@ export class RiskManagementEngine extends EventEmitter {
 
   private createAlert(alertData: Omit<RiskAlert, 'id' | 'timestamp' | 'resolved'>): void {
     const alert: RiskAlert = {
-      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
       timestamp: new Date(),
       resolved: false,
       ...alertData,
     };
 
     this.activeAlerts.set(alert.id, alert);
-    
+
     logger.warn('Risk alert created', { alert });
     this.emit('risk_alert', alert);
   }
@@ -485,12 +510,17 @@ export class RiskManagementEngine extends EventEmitter {
     return parseFloat(prices[symbol] || '0') || 0;
   }
 
-  private async simulateOrderVaR(_symbol: string, _side: 'buy' | 'sell', quantity: number, price?: number): Promise<number> {
+  private async simulateOrderVaR(
+    _symbol: string,
+    _side: 'buy' | 'sell',
+    quantity: number,
+    price?: number
+  ): Promise<number> {
     // Simplified simulation - would need more sophisticated modeling
     const currentPortfolio = await this.calculatePortfolioRisk();
-    const orderValue = quantity * (price || await this.getCurrentPrice(_symbol));
+    const orderValue = quantity * (price || (await this.getCurrentPrice(_symbol)));
     const orderVaR = orderValue * 0.02; // Simplified 2% VaR for new orders
-    
+
     return currentPortfolio.portfolioVar95 + orderVaR;
   }
 
@@ -505,16 +535,16 @@ export class RiskManagementEngine extends EventEmitter {
     const sizeScore = Math.min((Math.abs(position.size) / 10) * 20, 40);
     const varScore = Math.min((var95 / 1000) * 30, 30);
     const leverageScore = Math.min((position.leverage - 1) * 10, 30);
-    
+
     return Math.min(sizeScore + varScore + leverageScore, 100);
   }
 
   private parsePositions(accountState: unknown): any[] {
     // Parse actual HyperLiquid account state for position data
     if (!accountState || typeof accountState !== 'object') {
-      logger.warn('Invalid account state format for position parsing', { 
+      logger.warn('Invalid account state format for position parsing', {
         type: typeof accountState,
-        isNull: accountState === null 
+        isNull: accountState === null,
       });
       return [];
     }
@@ -540,30 +570,32 @@ export class RiskManagementEngine extends EventEmitter {
         return [];
       }
 
-      const positions = clearinghouseState.assetPositions.map((position: any, index: number) => {
-        try {
-          const symbol = position.coin || position.symbol || `UNKNOWN_${index}`;
-          const size = parseFloat(position.szi || position.size || '0');
-          const entryPrice = parseFloat(position.entryPx || position.entryPrice || '0');
-          
-          // Calculate leverage from position size and margin used
-          const marginUsed = parseFloat(position.marginUsed || '0');
-          const positionValue = Math.abs(size * entryPrice);
-          const leverage = marginUsed > 0 ? positionValue / marginUsed : 1;
+      const positions = clearinghouseState.assetPositions
+        .map((position: any, index: number) => {
+          try {
+            const symbol = position.coin || position.symbol || `UNKNOWN_${index}`;
+            const size = parseFloat(position.szi || position.size || '0');
+            const entryPrice = parseFloat(position.entryPx || position.entryPrice || '0');
 
-          return {
-            symbol,
-            size,
-            entryPrice,
-            leverage: Math.max(1, Math.min(leverage, this.riskLimits.maxLeverage)), // Clamp leverage
-            unrealizedPnl: parseFloat(position.unrealizedPnl || '0'),
-            marginUsed,
-          };
-        } catch (error) {
-          logger.warn('Failed to parse individual position', { index, error });
-          return null;
-        }
-      }).filter((position: any) => position !== null && position.size !== 0);
+            // Calculate leverage from position size and margin used
+            const marginUsed = parseFloat(position.marginUsed || '0');
+            const positionValue = Math.abs(size * entryPrice);
+            const leverage = marginUsed > 0 ? positionValue / marginUsed : 1;
+
+            return {
+              symbol,
+              size,
+              entryPrice,
+              leverage: Math.max(1, Math.min(leverage, this.riskLimits.maxLeverage)), // Clamp leverage
+              unrealizedPnl: parseFloat(position.unrealizedPnl || '0'),
+              marginUsed,
+            };
+          } catch (error) {
+            logger.warn('Failed to parse individual position', { index, error });
+            return null;
+          }
+        })
+        .filter((position: any) => position !== null && position.size !== 0);
 
       logger.info('Positions parsed from account state', {
         totalPositions: positions.length,
@@ -580,13 +612,17 @@ export class RiskManagementEngine extends EventEmitter {
   private getPortfolioReturns(positions: PositionRisk[]): number[] {
     // Simplified portfolio returns calculation
     const returns: number[] = [];
-    const totalValue = positions.reduce((sum, pos) => sum + Math.abs(pos.size * pos.currentPrice), 0);
-    
+    const totalValue = positions.reduce(
+      (sum, pos) => sum + Math.abs(pos.size * pos.currentPrice),
+      0
+    );
+
     if (totalValue === 0) return returns;
 
-    for (let i = 0; i < 30; i++) { // Last 30 periods
+    for (let i = 0; i < 30; i++) {
+      // Last 30 periods
       let portfolioReturn = 0;
-      positions.forEach(pos => {
+      positions.forEach((pos) => {
         const positionReturns = this.returns.get(pos.symbol) || [];
         if (positionReturns[i]) {
           const weight = Math.abs(pos.size * pos.currentPrice) / totalValue;
@@ -602,22 +638,22 @@ export class RiskManagementEngine extends EventEmitter {
   private async updatePriceHistory(): Promise<void> {
     try {
       const currentPrices = await this.adapter.getAllMids();
-      
+
       Object.entries(currentPrices).forEach(([symbol, priceStr]) => {
         const price = parseFloat(priceStr);
         const history = this.priceHistory.get(symbol) || [];
         history.push(price);
-        
+
         // Keep last 100 prices
         if (history.length > 100) history.shift();
         this.priceHistory.set(symbol, history);
-        
+
         // Calculate returns
         if (history.length > 1) {
           const returns = this.returns.get(symbol) || [];
           const returnValue = (price - history[history.length - 2]!) / history[history.length - 2]!;
           returns.push(returnValue);
-          
+
           // Keep last 100 returns
           if (returns.length > 100) returns.shift();
           this.returns.set(symbol, returns);
@@ -639,7 +675,7 @@ export class RiskManagementEngine extends EventEmitter {
   }
 
   getActiveAlerts(): RiskAlert[] {
-    return Array.from(this.activeAlerts.values()).filter(alert => !alert.resolved);
+    return Array.from(this.activeAlerts.values()).filter((alert) => !alert.resolved);
   }
 
   resolveAlert(alertId: string): boolean {
@@ -660,12 +696,12 @@ export class RiskManagementEngine extends EventEmitter {
     alertsBySeverity: Record<string, number>;
   } {
     const allAlerts = Array.from(this.activeAlerts.values());
-    const activeAlerts = allAlerts.filter(a => !a.resolved);
-    
+    const activeAlerts = allAlerts.filter((a) => !a.resolved);
+
     const alertsByType: Record<string, number> = {};
     const alertsBySeverity: Record<string, number> = {};
-    
-    allAlerts.forEach(alert => {
+
+    allAlerts.forEach((alert) => {
       alertsByType[alert.type] = (alertsByType[alert.type] || 0) + 1;
       alertsBySeverity[alert.severity] = (alertsBySeverity[alert.severity] || 0) + 1;
     });

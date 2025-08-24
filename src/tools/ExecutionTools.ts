@@ -468,8 +468,8 @@ export class ExecutionTools {
                     progress: `${report.filledQuantity}/${report.totalQuantity} (${((report.filledQuantity / report.totalQuantity) * 100).toFixed(1)}%)`,
                     averagePrice: report.averagePrice?.toFixed(6) || 'N/A',
                     sliceCount: report.slices.length,
-                    completedSlices: report.slices.filter(s => s.status === 'filled').length,
-                    execution_time: report.endTime 
+                    completedSlices: report.slices.filter((s) => s.status === 'filled').length,
+                    execution_time: report.endTime
                       ? `${Math.round((report.endTime.getTime() - report.startTime.getTime()) / 1000)}s`
                       : 'In progress',
                   },
@@ -515,7 +515,7 @@ export class ExecutionTools {
             text: JSON.stringify(
               {
                 action: 'list_active_orders',
-                activeOrders: activeOrders.map(order => ({
+                activeOrders: activeOrders.map((order) => ({
                   id: order.id,
                   symbol: order.symbol,
                   side: order.side,
@@ -568,9 +568,10 @@ export class ExecutionTools {
                   ...stats,
                   averageExecutionTime: `${Math.round(stats.averageExecutionTime / 1000)}s`,
                   averageSlippage: `${(stats.averageSlippage * 100).toFixed(4)}%`,
-                  successRate: stats.totalOrders > 0 
-                    ? `${((stats.completedOrders / stats.totalOrders) * 100).toFixed(1)}%`
-                    : 'N/A',
+                  successRate:
+                    stats.totalOrders > 0
+                      ? `${((stats.completedOrders / stats.totalOrders) * 100).toFixed(1)}%`
+                      : 'N/A',
                 },
                 timestamp: new Date().toISOString(),
               },
@@ -619,13 +620,14 @@ export class ExecutionTools {
           await this.executionEngine.stop();
           result = { status: 'stopped' };
           break;
-        case 'status':
+        case 'status': {
           const activeOrders = this.executionEngine.getActiveOrders();
-          result = { 
+          result = {
             status: 'running',
             activeOrders: activeOrders.length,
           };
           break;
+        }
       }
 
       return {

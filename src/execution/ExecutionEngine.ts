@@ -85,7 +85,7 @@ export class ExecutionEngine extends EventEmitter {
 
   async stop(): Promise<void> {
     this.isRunning = false;
-    
+
     // Cancel all active orders
     for (const order of this.activeOrders.values()) {
       if (order.status === 'running') {
@@ -189,8 +189,8 @@ export class ExecutionEngine extends EventEmitter {
    * Get all active orders
    */
   getActiveOrders(): ExecutionOrder[] {
-    return Array.from(this.activeOrders.values()).filter(order => 
-      order.status === 'pending' || order.status === 'running'
+    return Array.from(this.activeOrders.values()).filter(
+      (order) => order.status === 'pending' || order.status === 'running'
     );
   }
 
@@ -207,30 +207,34 @@ export class ExecutionEngine extends EventEmitter {
     averageSlippage: number;
   } {
     const allOrders = Array.from(this.activeOrders.values());
-    const completedReports = Array.from(this.executionReports.values())
-      .filter(report => report.status === 'completed');
+    const completedReports = Array.from(this.executionReports.values()).filter(
+      (report) => report.status === 'completed'
+    );
 
-    const averageExecutionTime = completedReports.length > 0
-      ? completedReports.reduce((sum, report) => {
-          const duration = report.endTime 
-            ? report.endTime.getTime() - report.startTime.getTime()
-            : 0;
-          return sum + duration;
-        }, 0) / completedReports.length
-      : 0;
+    const averageExecutionTime =
+      completedReports.length > 0
+        ? completedReports.reduce((sum, report) => {
+            const duration = report.endTime
+              ? report.endTime.getTime() - report.startTime.getTime()
+              : 0;
+            return sum + duration;
+          }, 0) / completedReports.length
+        : 0;
 
-    const averageSlippage = completedReports.length > 0
-      ? completedReports.reduce((sum, report) => {
-          return sum + (report.performance.slippage || 0);
-        }, 0) / completedReports.length
-      : 0;
+    const averageSlippage =
+      completedReports.length > 0
+        ? completedReports.reduce((sum, report) => {
+            return sum + (report.performance.slippage || 0);
+          }, 0) / completedReports.length
+        : 0;
 
     return {
       totalOrders: allOrders.length,
-      activeOrders: allOrders.filter(o => o.status === 'running' || o.status === 'pending').length,
-      completedOrders: allOrders.filter(o => o.status === 'completed').length,
-      cancelledOrders: allOrders.filter(o => o.status === 'cancelled').length,
-      failedOrders: allOrders.filter(o => o.status === 'failed').length,
+      activeOrders: allOrders.filter((o) => o.status === 'running' || o.status === 'pending')
+        .length,
+      completedOrders: allOrders.filter((o) => o.status === 'completed').length,
+      cancelledOrders: allOrders.filter((o) => o.status === 'cancelled').length,
+      failedOrders: allOrders.filter((o) => o.status === 'failed').length,
       averageExecutionTime,
       averageSlippage,
     };
@@ -257,8 +261,9 @@ export class ExecutionEngine extends EventEmitter {
   }
 
   private async processActiveOrders(): Promise<void> {
-    const pendingOrders = Array.from(this.activeOrders.values())
-      .filter(order => order.status === 'pending');
+    const pendingOrders = Array.from(this.activeOrders.values()).filter(
+      (order) => order.status === 'pending'
+    );
 
     for (const order of pendingOrders) {
       try {
@@ -277,10 +282,10 @@ export class ExecutionEngine extends EventEmitter {
 
   private async processScheduledSlices(): Promise<void> {
     const now = new Date();
-    
+
     for (const [orderId, slices] of this.orderSlices.entries()) {
-      const pendingSlices = slices.filter(slice => 
-        slice.status === 'pending' && slice.scheduled <= now
+      const pendingSlices = slices.filter(
+        (slice) => slice.status === 'pending' && slice.scheduled <= now
       );
 
       for (const slice of pendingSlices) {
@@ -301,7 +306,7 @@ export class ExecutionEngine extends EventEmitter {
 
   private async startOrderExecution(order: ExecutionOrder): Promise<void> {
     order.status = 'running';
-    
+
     // Generate execution slices based on algorithm
     const slices = await this.generateExecutionSlices(order);
     this.orderSlices.set(order.id, slices);
@@ -332,16 +337,18 @@ export class ExecutionEngine extends EventEmitter {
   }
 
   private generateImmediateSlices(order: ExecutionOrder): ExecutionSlice[] {
-    return [{
-      id: this.generateSliceId(),
-      parentOrderId: order.id,
-      symbol: order.symbol,
-      side: order.side,
-      quantity: order.quantity,
-      price: order.limitPrice,
-      scheduled: new Date(),
-      status: 'pending',
-    }];
+    return [
+      {
+        id: this.generateSliceId(),
+        parentOrderId: order.id,
+        symbol: order.symbol,
+        side: order.side,
+        quantity: order.quantity,
+        price: order.limitPrice,
+        scheduled: new Date(),
+        status: 'pending',
+      },
+    ];
   }
 
   private generateTWAPSlices(order: ExecutionOrder): ExecutionSlice[] {
@@ -360,9 +367,10 @@ export class ExecutionEngine extends EventEmitter {
 
     for (let i = 0; i < sliceCount; i++) {
       const scheduled = new Date(startTime.getTime() + i * sliceInterval);
-      const quantity = i === sliceCount - 1 
-        ? order.quantity - (sliceQuantity * (sliceCount - 1)) // Handle rounding
-        : sliceQuantity;
+      const quantity =
+        i === sliceCount - 1
+          ? order.quantity - sliceQuantity * (sliceCount - 1) // Handle rounding
+          : sliceQuantity;
 
       slices.push({
         id: this.generateSliceId(),
@@ -412,7 +420,7 @@ export class ExecutionEngine extends EventEmitter {
     let sliceIndex = 0;
     while (remainingQuantity > 0) {
       let sliceQuantity = Math.min(baseSliceSize, remainingQuantity);
-      
+
       // Add randomization
       if (randomization > 0) {
         const randomFactor = 1 + (Math.random() - 0.5) * randomization;
@@ -441,14 +449,14 @@ export class ExecutionEngine extends EventEmitter {
     slice.status = 'submitted';
 
     try {
-      // Resolve symbol to asset ID for HyperLiquid API  
+      // Resolve symbol to asset ID for HyperLiquid API
       const order = this.activeOrders.get(slice.parentOrderId);
       if (!order) {
         throw new Error(`Order not found for slice: ${slice.parentOrderId}`);
       }
-      
+
       const assetId = await this.resolveSymbolToAssetId(order.symbol);
-      
+
       let result;
       if (slice.price) {
         result = await this.adapter.placeLimitOrder(
@@ -492,12 +500,12 @@ export class ExecutionEngine extends EventEmitter {
 
   private checkOrderCompletion(orderId: string): void {
     const slices = this.orderSlices.get(orderId) || [];
-    const completedSlices = slices.filter(s => s.status === 'filled' || s.status === 'failed');
-    
+    const completedSlices = slices.filter((s) => s.status === 'filled' || s.status === 'failed');
+
     if (completedSlices.length === slices.length) {
       const order = this.activeOrders.get(orderId);
       if (order) {
-        const filledSlices = slices.filter(s => s.status === 'filled');
+        const filledSlices = slices.filter((s) => s.status === 'filled');
         order.status = filledSlices.length > 0 ? 'completed' : 'failed';
         this.updateExecutionReport(orderId);
         this.emit('orderCompleted', order);
@@ -512,7 +520,7 @@ export class ExecutionEngine extends EventEmitter {
 
     if (!order || !report) return;
 
-    const filledSlices = slices.filter(s => s.status === 'filled');
+    const filledSlices = slices.filter((s) => s.status === 'filled');
     const filledQuantity = filledSlices.reduce((sum, s) => sum + (s.fillQuantity || s.quantity), 0);
 
     report.filledQuantity = filledQuantity;
@@ -530,14 +538,16 @@ export class ExecutionEngine extends EventEmitter {
       const weightedPrice = filledSlices.reduce((sum, s) => {
         const quantity = s.fillQuantity || s.quantity;
         const price = s.fillPrice || s.price || 0;
-        return sum + (quantity * price);
+        return sum + quantity * price;
       }, 0);
 
       report.averagePrice = totalFilled > 0 ? weightedPrice / totalFilled : undefined;
     }
   }
 
-  private async validateOrder(order: ExecutionOrder): Promise<{ valid: boolean; errors: string[] }> {
+  private async validateOrder(
+    order: ExecutionOrder
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
     if (order.quantity <= 0) {
@@ -555,13 +565,14 @@ export class ExecutionEngine extends EventEmitter {
     // Validate algorithm parameters
     switch (order.algorithm) {
       case 'twap':
-      case 'vwap':
+      case 'vwap': {
         const params = order.algorithmParams as { duration?: number };
         if (!params.duration || params.duration <= 0) {
           errors.push('Duration must be positive for TWAP/VWAP algorithms');
         }
         break;
-      case 'iceberg':
+      }
+      case 'iceberg': {
         const icebergParams = order.algorithmParams as { sliceSize?: number };
         if (!icebergParams.sliceSize || icebergParams.sliceSize <= 0) {
           errors.push('Slice size must be positive for Iceberg algorithm');
@@ -570,6 +581,7 @@ export class ExecutionEngine extends EventEmitter {
           errors.push('Slice size must be smaller than total quantity');
         }
         break;
+      }
     }
 
     return {
@@ -579,7 +591,7 @@ export class ExecutionEngine extends EventEmitter {
   }
 
   private generateOrderId(): string {
-    return `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `exec_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private symbolToAssetIdCache: Map<string, number> = new Map();
@@ -593,7 +605,7 @@ export class ExecutionEngine extends EventEmitter {
     try {
       // Get asset metadata from HyperLiquid to resolve symbol to asset ID
       const assets = await this.adapter.getAssets();
-      
+
       if (assets && Array.isArray(assets)) {
         // Look for the symbol in the asset data
         const assetInfo = assets.find((asset: any) => {
@@ -604,18 +616,22 @@ export class ExecutionEngine extends EventEmitter {
 
         if (assetInfo) {
           // For HyperLiquid, asset ID is often the index position
-          const assetId = parseInt((assetInfo as any)?.assetId || (assetInfo as any)?.id || 
-                                  assets.indexOf(assetInfo).toString() || '0');
-          
+          const assetId = parseInt(
+            (assetInfo as any)?.assetId ||
+              (assetInfo as any)?.id ||
+              assets.indexOf(assetInfo).toString() ||
+              '0'
+          );
+
           // Cache the result
           this.symbolToAssetIdCache.set(symbol, assetId);
-          
-          logger.debug('Symbol resolved to asset ID from assets endpoint', { 
-            symbol, 
+
+          logger.debug('Symbol resolved to asset ID from assets endpoint', {
+            symbol,
             assetId,
-            cached: false 
+            cached: false,
           });
-          
+
           return assetId;
         }
       }
@@ -625,54 +641,54 @@ export class ExecutionEngine extends EventEmitter {
       if (adapterMetadata && typeof adapterMetadata === 'object' && 'symbols' in adapterMetadata) {
         const symbols = adapterMetadata.symbols as any[];
         const symbolIndex = symbols.findIndex((s: string) => s === symbol);
-        
+
         if (symbolIndex >= 0) {
           const assetId = symbolIndex;
           this.symbolToAssetIdCache.set(symbol, assetId);
-          
-          logger.debug('Symbol resolved via adapter metadata', { 
-            symbol, 
+
+          logger.debug('Symbol resolved via adapter metadata', {
+            symbol,
             assetId,
-            cached: false 
+            cached: false,
           });
-          
+
           return assetId;
         }
       }
 
       // Final fallback: use hardcoded common symbols
       const commonSymbols: Record<string, number> = {
-        'BTC': 0,
-        'ETH': 1,
-        'SOL': 2,
-        'ARB': 3,
-        'AVAX': 4,
+        BTC: 0,
+        ETH: 1,
+        SOL: 2,
+        ARB: 3,
+        AVAX: 4,
       };
 
       if (commonSymbols[symbol]) {
         const assetId = commonSymbols[symbol];
         this.symbolToAssetIdCache.set(symbol, assetId);
-        
-        logger.warn('Symbol resolved using fallback mapping', { 
-          symbol, 
+
+        logger.warn('Symbol resolved using fallback mapping', {
+          symbol,
           assetId,
-          warning: 'Using hardcoded fallback - may be inaccurate'
+          warning: 'Using hardcoded fallback - may be inaccurate',
         });
-        
+
         return assetId;
       }
 
       throw new Error(`Unable to resolve symbol '${symbol}' to asset ID`);
     } catch (error) {
-      logger.error('Failed to resolve symbol to asset ID', { 
-        symbol, 
-        error: error instanceof Error ? error.message : 'Unknown error'
+      logger.error('Failed to resolve symbol to asset ID', {
+        symbol,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
   }
 
   private generateSliceId(): string {
-    return `slice_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `slice_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 }
