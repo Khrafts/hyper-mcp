@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "exclude": [
+    "src/adapters/hyperliquid/HyperLiquidAdapter.ts",
+    "src/adapters/hyperliquid/HyperLiquidClient.ts",
+    "src/server/AdapterManager.ts",
+    "src/tools/HyperLiquidTools.ts",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}

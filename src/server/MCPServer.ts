@@ -8,6 +8,7 @@ import { createComponentLogger, logMCPMessage, logToolInvocation } from '../util
 import { getConfig } from '../config/index.js';
 import { SessionManager, ISessionManager } from './SessionManager.js';
 import { ToolRegistry, IToolRegistry, MCPTool } from './ToolRegistry.js';
+import { SimpleAdapterManager } from './SimpleAdapterManager.js';
 
 const logger = createComponentLogger('MCP_SERVER');
 const config = getConfig();
@@ -40,13 +41,14 @@ export interface IMCPServer {
   registerTool(tool: MCPTool): void;
   handleRequest(request: MCPRequest): Promise<MCPResponse>;
   broadcastNotification(notification: MCPNotification): void;
-  getHealthStatus(): { healthy: boolean; details: Record<string, unknown> };
+  getHealthStatus(): Promise<{ healthy: boolean; details: Record<string, unknown> }>;
 }
 
 export class MCPServer implements IMCPServer {
   private server: Server;
   private _sessionManager: ISessionManager;
   private _toolRegistry: IToolRegistry;
+  private _adapterManager: SimpleAdapterManager;
   private isRunning: boolean = false;
   private startTime: number = 0;
 
@@ -67,6 +69,7 @@ export class MCPServer implements IMCPServer {
 
     this._sessionManager = new SessionManager();
     this._toolRegistry = new ToolRegistry();
+    this._adapterManager = new SimpleAdapterManager(this._toolRegistry as ToolRegistry);
 
     this.setupHandlers();
 
@@ -244,6 +247,9 @@ export class MCPServer implements IMCPServer {
     try {
       this.startTime = Date.now();
 
+      // Initialize adapters and tools
+      await this._adapterManager.initialize();
+
       // Start server (it connects via stdio automatically)
       // The @modelcontextprotocol/sdk server doesn't need explicit connection
 
@@ -252,13 +258,15 @@ export class MCPServer implements IMCPServer {
       logger.info('MCP Server started successfully', {
         start_time: new Date(this.startTime).toISOString(),
         capabilities: ['tools', 'logging', 'prompts'],
+        adapters_initialized: this._adapterManager.getInitializedAdapters(),
       });
 
       // Register some basic test tools for validation
       this.registerDefaultTools();
 
       logger.info('MCP Server ready to accept connections', {
-        registered_tools: this.toolRegistry.getStatistics().totalTools,
+        registered_tools: this._toolRegistry.getStatistics().totalTools,
+        adapters: this._adapterManager.getInitializedAdapters(),
       });
     } catch (error) {
       logger.error('Failed to start MCP Server', {
@@ -277,6 +285,9 @@ export class MCPServer implements IMCPServer {
 
     try {
       const shutdownStart = Date.now();
+
+      // Cleanup adapters
+      await this._adapterManager.cleanup();
 
       // Cleanup sessions
       await this._sessionManager.cleanup();
@@ -372,12 +383,14 @@ export class MCPServer implements IMCPServer {
     });
   }
 
-  getHealthStatus(): { healthy: boolean; details: Record<string, unknown> } {
+  async getHealthStatus(): Promise<{ healthy: boolean; details: Record<string, unknown> }> {
     const sessionHealth = this._sessionManager.getHealthStatus();
     const toolHealth = this._toolRegistry.getHealthStatus();
+    const adapterHealth = await this._adapterManager.getHealthStatus();
     const uptime = this.isRunning ? Date.now() - this.startTime : 0;
 
-    const healthy = this.isRunning && sessionHealth.healthy && toolHealth.healthy;
+    const healthy =
+      this.isRunning && sessionHealth.healthy && toolHealth.healthy && adapterHealth.healthy;
 
     return {
       healthy,
@@ -386,7 +399,9 @@ export class MCPServer implements IMCPServer {
         uptime_ms: uptime,
         sessions: sessionHealth,
         tools: toolHealth.details,
+        adapters: adapterHealth,
         capabilities: ['tools', 'logging', 'prompts'],
+        metadata: this._adapterManager.getAdapterMetadata(),
       },
     };
   }
@@ -401,7 +416,7 @@ export class MCPServer implements IMCPServer {
       version: '1.0.0',
       enabled: true,
       handler: async () => {
-        return this.getHealthStatus();
+        return await this.getHealthStatus();
       },
     });
 

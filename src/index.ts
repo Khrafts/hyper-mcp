@@ -66,7 +66,7 @@ async function main() {
     await server.start();
 
     // Log successful startup
-    const healthStatus = server.getHealthStatus();
+    const healthStatus = await server.getHealthStatus();
     logger.info('HyperLiquid Intelligence MCP started successfully', {
       healthy: healthStatus.healthy,
       uptime_ms: healthStatus.details.uptime_ms,
