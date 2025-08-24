@@ -683,6 +683,10 @@ export class RiskManagementEngine extends EventEmitter {
     return Array.from(this.activeAlerts.values()).filter((alert) => !alert.resolved);
   }
 
+  getAllAlerts(): RiskAlert[] {
+    return Array.from(this.activeAlerts.values());
+  }
+
   resolveAlert(alertId: string): boolean {
     const alert = this.activeAlerts.get(alertId);
     if (alert) {

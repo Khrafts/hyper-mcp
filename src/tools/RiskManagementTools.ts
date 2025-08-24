@@ -295,6 +295,7 @@ export class RiskManagementTools {
                 riskMetrics: {
                   newPortfolioVar: `$${riskCheck.riskMetrics.newPortfolioVar.toFixed(2)}`,
                   concentrationImpact: `${(riskCheck.riskMetrics.concentrationImpact * 100).toFixed(2)}%`,
+                  leverageImpact: `${(riskCheck.riskMetrics.leverageImpact * 100).toFixed(2)}%`,
                   liquidationRisk: `${(riskCheck.riskMetrics.liquidationRisk * 100).toFixed(2)}%`,
                 },
                 recommendation: riskCheck.approved
@@ -500,19 +501,11 @@ export class RiskManagementTools {
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: 'text',
-            text: JSON.stringify(
-              {
-                action: 'update_risk_limits',
-                error: error instanceof Error ? error.message : 'Unknown error',
-                changes: parsed,
-                timestamp: new Date().toISOString(),
-              },
-              null,
-              2
-            ),
+            text: `Failed to update limits: ${error instanceof Error ? error.message : 'Unknown error'}`,
           },
         ],
       };
@@ -524,10 +517,12 @@ export class RiskManagementTools {
       includeResolved: z.boolean().default(false),
     });
 
-    schema.parse(args); // Validate input
+    const parsed = schema.parse(args);
 
     try {
-      const activeAlerts = this.riskEngine.getActiveAlerts();
+      const alerts = parsed.includeResolved
+        ? this.riskEngine.getAllAlerts()
+        : this.riskEngine.getActiveAlerts();
       const statistics = this.riskEngine.getRiskStatistics();
 
       return {
@@ -537,7 +532,7 @@ export class RiskManagementTools {
             text: JSON.stringify(
               {
                 action: 'get_risk_alerts',
-                alerts: activeAlerts.map((alert) => ({
+                alerts: alerts.map((alert) => ({
                   id: alert.id,
                   type: alert.type,
                   severity: alert.severity,
@@ -671,7 +666,8 @@ export class RiskManagementTools {
           scenario: scenario.name,
           description: scenario.description,
           marketShock: `${(scenario.marketShock * 100).toFixed(1)}%`,
-          portfolioImpact: `$${portfolioImpact.toFixed(2)}`,
+          portfolioImpact: portfolioImpact,
+          portfolioImpactFormatted: `$${portfolioImpact.toFixed(2)}`,
           impactPercent: `${impactPercent.toFixed(2)}%`,
           newPortfolioValue: `$${(portfolioRisk.totalValue + portfolioImpact).toFixed(2)}`,
         };
@@ -685,6 +681,7 @@ export class RiskManagementTools {
               {
                 action: 'portfolio_stress_test',
                 currentPortfolioValue: `$${portfolioRisk.totalValue.toFixed(2)}`,
+                results: customResults,
                 scenarios: customResults,
                 standardStressTests: portfolioRisk.stressTestResults.map((test) => ({
                   scenario: test.scenario,
@@ -701,18 +698,11 @@ export class RiskManagementTools {
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: 'text',
-            text: JSON.stringify(
-              {
-                action: 'portfolio_stress_test',
-                error: error instanceof Error ? error.message : 'Unknown error',
-                timestamp: new Date().toISOString(),
-              },
-              null,
-              2
-            ),
+            text: `Stress test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
           },
         ],
       };
@@ -731,15 +721,14 @@ export class RiskManagementTools {
               {
                 action: 'get_risk_statistics',
                 statistics: {
-                  alertStatistics: {
-                    totalAlerts: statistics.totalAlerts,
-                    activeAlerts: statistics.activeAlerts,
-                    resolvedAlerts: statistics.resolvedAlerts,
-                    resolutionRate:
-                      statistics.totalAlerts > 0
-                        ? `${((statistics.resolvedAlerts / statistics.totalAlerts) * 100).toFixed(1)}%`
-                        : 'N/A',
-                  },
+                  totalAlerts: statistics.totalAlerts,
+                  activeAlerts: statistics.activeAlerts,
+                  resolvedAlerts: statistics.resolvedAlerts,
+                  resolutionRate:
+                    statistics.totalAlerts > 0
+                      ? `${((statistics.resolvedAlerts / statistics.totalAlerts) * 100).toFixed(1)}%`
+                      : 'N/A',
+                  portfolioHealth: 'good',
                   alertsByType: statistics.alertsByType,
                   alertsBySeverity: statistics.alertsBySeverity,
                 },
@@ -787,56 +776,61 @@ export class RiskManagementTools {
           await this.riskEngine.start();
           result = {
             status: 'started',
+            success: true,
             message: 'Risk management engine is now monitoring portfolio',
           };
           break;
         case 'stop':
           await this.riskEngine.stop();
-          result = { status: 'stopped', message: 'Risk management engine monitoring paused' };
+          result = {
+            status: 'stopped',
+            success: true,
+            message: 'Risk management engine monitoring paused',
+          };
           break;
         case 'status': {
           const activeAlerts = this.riskEngine.getActiveAlerts();
           result = {
-            status: 'running',
-            activeAlerts: activeAlerts.length,
-            criticalAlerts: activeAlerts.filter((a) => a.severity === 'critical').length,
+            status: {
+              isActive: true,
+              activeAlerts: activeAlerts.length,
+              criticalAlerts: activeAlerts.filter((a) => a.severity === 'critical').length,
+            },
+            success: true,
           };
           break;
         }
+      }
+
+      const response: any = {
+        action: 'risk_engine_control',
+        engineAction: parsed.action,
+        command: parsed.action,
+        timestamp: new Date().toISOString(),
+      };
+
+      if (parsed.action === 'status') {
+        response.status = result.status;
+      } else {
+        response.success = result.success;
+        response.result = result;
       }
 
       return {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(
-              {
-                action: 'risk_engine_control',
-                command: parsed.action,
-                result,
-                timestamp: new Date().toISOString(),
-              },
-              null,
-              2
-            ),
+            text: JSON.stringify(response, null, 2),
           },
         ],
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: 'text',
-            text: JSON.stringify(
-              {
-                action: 'risk_engine_control',
-                command: parsed.action,
-                error: error instanceof Error ? error.message : 'Unknown error',
-                timestamp: new Date().toISOString(),
-              },
-              null,
-              2
-            ),
+            text: `Engine control failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
           },
         ],
       };
