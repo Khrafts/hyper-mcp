@@ -4,10 +4,7 @@ export * from './utilities/ProtocolBuilder.js';
 export * from './templates/index.js';
 
 // Import functions for use in this file
-import {
-  createProtocol,
-  createEndpoint,
-} from './utilities/ProtocolBuilder.js';
+import { createProtocol, createEndpoint } from './utilities/ProtocolBuilder.js';
 
 // Utilities
 export {
@@ -16,7 +13,7 @@ export {
   CommunityParameterBuilder,
   createProtocol,
   createEndpoint,
-  createParameter
+  createParameter,
 } from './utilities/ProtocolBuilder.js';
 
 // Templates

@@ -8,7 +8,7 @@ describe('ProtocolValidator', () => {
     validator = new ProtocolValidator({
       strictMode: true,
       maxEndpoints: 10,
-      requiredFields: ['name', 'version', 'description', 'author', 'license']
+      requiredFields: ['name', 'version', 'description', 'author', 'license'],
     });
   });
 
@@ -27,15 +27,15 @@ describe('ProtocolValidator', () => {
           description: 'Get data from the API',
           response: {
             type: 'object',
-            description: 'Data response'
-          }
-        }
-      ]
+            description: 'Data response',
+          },
+        },
+      ],
     };
 
     it('should validate a valid protocol', async () => {
       const result = await validator.validate(validProtocol);
-      
+
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
@@ -43,16 +43,16 @@ describe('ProtocolValidator', () => {
     it('should reject protocol with invalid name format', async () => {
       const invalidProtocol = {
         ...validProtocol,
-        name: '123invalid-name'
+        name: '123invalid-name',
       };
 
       const result = await validator.validate(invalidProtocol);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
         expect.objectContaining({
           code: 'SCHEMA_VALIDATION',
-          path: 'name'
+          path: 'name',
         })
       );
     });
@@ -60,16 +60,16 @@ describe('ProtocolValidator', () => {
     it('should reject protocol with invalid version format', async () => {
       const invalidProtocol = {
         ...validProtocol,
-        version: 'invalid-version'
+        version: 'invalid-version',
       };
 
       const result = await validator.validate(invalidProtocol);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
         expect.objectContaining({
           code: 'SCHEMA_VALIDATION',
-          path: 'version'
+          path: 'version',
         })
       );
     });
@@ -77,16 +77,16 @@ describe('ProtocolValidator', () => {
     it('should reject protocol with short description', async () => {
       const invalidProtocol = {
         ...validProtocol,
-        description: 'Short'
+        description: 'Short',
       };
 
       const result = await validator.validate(invalidProtocol);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
         expect.objectContaining({
           code: 'SCHEMA_VALIDATION',
-          path: 'description'
+          path: 'description',
         })
       );
     });
@@ -94,11 +94,11 @@ describe('ProtocolValidator', () => {
     it('should reject protocol with missing required fields', async () => {
       const invalidProtocol = {
         ...validProtocol,
-        author: undefined
+        author: undefined,
       } as any;
 
       const result = await validator.validate(invalidProtocol);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors.some((error: any) => error.path === 'author')).toBe(true);
     });
@@ -113,8 +113,8 @@ describe('ProtocolValidator', () => {
         description: `Endpoint ${i} description`,
         response: {
           type: 'object' as const,
-          description: 'Response'
-        }
+          description: 'Response',
+        },
       }));
 
       const protocolWithManyEndpoints: CommunityProtocol = {
@@ -123,15 +123,15 @@ describe('ProtocolValidator', () => {
         description: 'A test protocol with many endpoints',
         author: 'Test Author',
         license: 'MIT',
-        endpoints
+        endpoints,
       };
 
       const result = await validator.validate(protocolWithManyEndpoints);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
         expect.objectContaining({
-          code: 'TOO_MANY_ENDPOINTS'
+          code: 'TOO_MANY_ENDPOINTS',
         })
       );
     });
@@ -149,24 +149,24 @@ describe('ProtocolValidator', () => {
             method: 'GET',
             path: '/api/data1',
             description: 'Get data endpoint 1',
-            response: { type: 'object', description: 'Response' }
+            response: { type: 'object', description: 'Response' },
           },
           {
             name: 'getData',
             method: 'POST',
             path: '/api/data2',
             description: 'Get data endpoint 2',
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithDuplicates);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
         expect.objectContaining({
-          code: 'DUPLICATE_ENDPOINT'
+          code: 'DUPLICATE_ENDPOINT',
         })
       );
     });
@@ -184,24 +184,24 @@ describe('ProtocolValidator', () => {
             method: 'GET',
             path: '/api/data',
             description: 'Get data endpoint 1',
-            response: { type: 'object', description: 'Response' }
+            response: { type: 'object', description: 'Response' },
           },
           {
             name: 'getData2',
             method: 'GET',
             path: '/api/data',
             description: 'Get data endpoint 2',
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithDuplicatePaths);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
         expect.objectContaining({
-          code: 'DUPLICATE_PATH_METHOD'
+          code: 'DUPLICATE_PATH_METHOD',
         })
       );
     });
@@ -228,23 +228,23 @@ describe('ProtocolValidator', () => {
                 description: 'Limit the number of results',
                 required: false,
                 minimum: 1,
-                maximum: 100
+                maximum: 100,
               },
               {
                 name: 'category',
                 type: 'string',
                 description: 'Filter by category',
                 required: false,
-                enum: ['news', 'sports', 'tech']
-              }
+                enum: ['news', 'sports', 'tech'],
+              },
             ],
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithParams);
-      
+
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
@@ -268,20 +268,20 @@ describe('ProtocolValidator', () => {
                 type: 'string',
                 description: 'Status filter',
                 required: false,
-                enum: ['active', 123, true] // Mixed types in enum
-              }
+                enum: ['active', 123, true], // Mixed types in enum
+              },
             ],
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithInvalidEnum);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
         expect.objectContaining({
-          code: 'INVALID_ENUM_TYPE'
+          code: 'INVALID_ENUM_TYPE',
         })
       );
     });
@@ -306,20 +306,20 @@ describe('ProtocolValidator', () => {
                 description: 'Numeric value',
                 required: false,
                 minimum: 100,
-                maximum: 50 // Invalid: minimum > maximum
-              }
+                maximum: 50, // Invalid: minimum > maximum
+              },
             ],
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithInvalidRange);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
         expect.objectContaining({
-          code: 'INVALID_NUMBER_RANGE'
+          code: 'INVALID_NUMBER_RANGE',
         })
       );
     });
@@ -339,16 +339,16 @@ describe('ProtocolValidator', () => {
             method: 'GET',
             path: '/api/data',
             description: 'Get data without auth',
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithoutAuth);
-      
+
       expect(result.warnings).toContainEqual(
         expect.objectContaining({
-          code: 'NO_AUTHENTICATION'
+          code: 'NO_AUTHENTICATION',
         })
       );
     });
@@ -366,16 +366,16 @@ describe('ProtocolValidator', () => {
             method: 'GET',
             path: '/api/data',
             description: 'Get data without rate limit',
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithoutRateLimit);
-      
+
       expect(result.warnings).toContainEqual(
         expect.objectContaining({
-          code: 'NO_RATE_LIMIT'
+          code: 'NO_RATE_LIMIT',
         })
       );
     });
@@ -394,16 +394,16 @@ describe('ProtocolValidator', () => {
             method: 'GET',
             path: '/api/data',
             description: 'Get data',
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithHttpRepo);
-      
+
       expect(result.warnings).toContainEqual(
         expect.objectContaining({
-          code: 'INSECURE_REPOSITORY_URL'
+          code: 'INSECURE_REPOSITORY_URL',
         })
       );
     });
@@ -421,16 +421,16 @@ describe('ProtocolValidator', () => {
             method: 'GET',
             path: '/api/password/reset',
             description: 'Password reset endpoint',
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithSensitivePath);
-      
+
       expect(result.warnings).toContainEqual(
         expect.objectContaining({
-          code: 'SENSITIVE_DATA_IN_URL'
+          code: 'SENSITIVE_DATA_IN_URL',
         })
       );
     });
@@ -442,7 +442,7 @@ describe('ProtocolValidator', () => {
         strictMode: true,
         maxEndpoints: 10,
         allowedDomains: ['github.com', 'gitlab.com'],
-        requiredFields: ['name', 'version', 'description', 'author', 'license']
+        requiredFields: ['name', 'version', 'description', 'author', 'license'],
       });
     });
 
@@ -460,13 +460,13 @@ describe('ProtocolValidator', () => {
             method: 'GET',
             path: '/api/data',
             description: 'Get data',
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithAllowedDomain);
-      
+
       expect(result.valid).toBe(true);
     });
 
@@ -484,17 +484,17 @@ describe('ProtocolValidator', () => {
             method: 'GET',
             path: '/api/data',
             description: 'Get data',
-            response: { type: 'object', description: 'Response' }
-          }
-        ]
+            response: { type: 'object', description: 'Response' },
+          },
+        ],
       };
 
       const result = await validator.validate(protocolWithDisallowedDomain);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
         expect.objectContaining({
-          code: 'DOMAIN_NOT_ALLOWED'
+          code: 'DOMAIN_NOT_ALLOWED',
         })
       );
     });
@@ -509,12 +509,12 @@ describe('ProtocolValidator', () => {
         description: 'Get data from the API',
         response: {
           type: 'object' as const,
-          description: 'Data response'
-        }
+          description: 'Data response',
+        },
       };
 
       const result = validator.validateEndpoint(validEndpoint);
-      
+
       expect(result.valid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
@@ -527,12 +527,12 @@ describe('ProtocolValidator', () => {
         description: 'Get data from the API',
         response: {
           type: 'object' as const,
-          description: 'Data response'
-        }
+          description: 'Data response',
+        },
       };
 
       const result = validator.validateEndpoint(invalidEndpoint);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
     });
@@ -543,11 +543,11 @@ describe('ProtocolValidator', () => {
       const invalidProtocol = null as any;
 
       const result = await validator.validate(invalidProtocol);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors).toContainEqual(
         expect.objectContaining({
-          code: 'VALIDATION_ERROR'
+          code: 'VALIDATION_ERROR',
         })
       );
     });
@@ -559,14 +559,14 @@ describe('ProtocolValidator', () => {
         description: 'Short',
         author: '',
         license: '',
-        endpoints: []
+        endpoints: [],
       };
 
       const result = await validator.validate(protocolWithMultipleErrors);
-      
+
       expect(result.valid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(3);
-      
+
       // Each error should have required properties
       result.errors.forEach((error: any) => {
         expect(error).toHaveProperty('code');

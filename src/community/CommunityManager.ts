@@ -9,7 +9,7 @@ import {
   CommunitySystemConfig,
   LoadedProtocol,
   ValidationResult,
-  GitHubSubmission
+  GitHubSubmission,
 } from './types/index.js';
 
 export class CommunityManager extends EventEmitter {
@@ -59,21 +59,21 @@ export class CommunityManager extends EventEmitter {
   }
 
   async loadProtocol(protocol: CommunityProtocol): Promise<LoadedProtocol> {
-    try {
-      // First validate the protocol
-      const validationResult = await this.validateProtocol(protocol);
-      if (!validationResult.valid) {
-        const validationError = communityErrorHandler.createProtocolValidationError(
-          `Protocol validation failed: ${validationResult.errors.map((e: any) => e.message).join(', ')}`,
-          {
-            protocolName: protocol.name,
-            protocolVersion: protocol.version,
-            validationErrors: validationResult.errors
-          }
-        );
-        throw validationError;
-      }
+    // First validate the protocol
+    const validationResult = await this.validateProtocol(protocol);
+    if (!validationResult.valid) {
+      const validationError = communityErrorHandler.createProtocolValidationError(
+        `Protocol validation failed: ${validationResult.errors.map((e: any) => e.message).join(', ')}`,
+        {
+          protocolName: protocol.name,
+          protocolVersion: protocol.version,
+          validationErrors: validationResult.errors,
+        }
+      );
+      throw validationError;
+    }
 
+    try {
       // Load the protocol
       const loadedProtocol = await this.loader.load(protocol);
       this.loadedProtocols.set(protocol.name, loadedProtocol);
@@ -81,11 +81,12 @@ export class CommunityManager extends EventEmitter {
       logger.info(`Successfully loaded protocol: ${protocol.name}@${protocol.version}`);
       return loadedProtocol;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       const loadError = communityErrorHandler.createProtocolLoadError(
-        `Failed to load protocol ${protocol.name}`,
+        `Failed to load protocol ${protocol.name}: ${errorMessage}`,
         {
           protocolName: protocol.name,
-          protocolVersion: protocol.version
+          protocolVersion: protocol.version,
         },
         error instanceof Error ? error : new Error(String(error))
       );
@@ -140,7 +141,7 @@ export class CommunityManager extends EventEmitter {
 
       // Load protocol from submission
       const protocol = await this.github.getProtocolFromSubmission(submission);
-      
+
       // Validate protocol
       const validationResult = await this.validateProtocol(protocol);
       submission.validationResults = validationResult;
@@ -148,7 +149,7 @@ export class CommunityManager extends EventEmitter {
 
       if (validationResult.valid) {
         submission.status = 'validated';
-        
+
         if (this.config.github.autoMerge && validationResult.errors.length === 0) {
           submission.status = 'approved';
           await this.github.approveSubmission(submission);
@@ -170,26 +171,28 @@ export class CommunityManager extends EventEmitter {
         {
           pullRequestNumber: submission.pullRequestNumber,
           author: submission.author,
-          protocolName: submission.protocolPath?.split('/').pop()?.replace('.json', '')
+          protocolName: submission.protocolPath?.split('/').pop()?.replace('.json', ''),
         },
         error instanceof Error ? error : new Error(String(error))
       );
-      
+
       communityErrorHandler.logError(submissionError, {
         pullRequestNumber: submission.pullRequestNumber,
-        author: submission.author
+        author: submission.author,
       });
 
       submission.status = 'rejected';
       await this.github.rejectSubmission(submission, {
         valid: false,
-        errors: [{
-          code: 'PROCESSING_ERROR',
-          message: `Internal error: ${submissionError.message}`,
-          path: '',
-          severity: 'error'
-        }],
-        warnings: []
+        errors: [
+          {
+            code: 'PROCESSING_ERROR',
+            message: `Internal error: ${submissionError.message}`,
+            path: '',
+            severity: 'error',
+          },
+        ],
+        warnings: [],
       });
       this.emit('submission:processed', submission);
     }
@@ -206,28 +209,30 @@ export class CommunityManager extends EventEmitter {
     failedSubmissions: number;
   } {
     const loadedProtocols = this.loadedProtocols.size;
-    const totalTools = Array.from(this.loadedProtocols.values())
-      .reduce((sum, protocol) => sum + protocol.tools.length, 0);
+    const totalTools = Array.from(this.loadedProtocols.values()).reduce(
+      (sum, protocol) => sum + protocol.tools.length,
+      0
+    );
 
     return {
       loadedProtocols,
       totalTools,
       successfulSubmissions: 0, // TODO: Implement tracking
-      failedSubmissions: 0 // TODO: Implement tracking
+      failedSubmissions: 0, // TODO: Implement tracking
     };
   }
 
   async shutdown(): Promise<void> {
     logger.info('Shutting down CommunityManager...');
-    
+
     // Unload all protocols
     const protocols = Array.from(this.loadedProtocols.keys());
-    await Promise.all(protocols.map(name => this.unloadProtocol(name)));
-    
+    await Promise.all(protocols.map((name) => this.unloadProtocol(name)));
+
     // Cleanup components
     await this.loader.shutdown();
     await this.github.shutdown();
-    
+
     this.removeAllListeners();
     logger.info('CommunityManager shutdown complete');
   }

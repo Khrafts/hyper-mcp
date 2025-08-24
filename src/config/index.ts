@@ -48,7 +48,7 @@ const ConfigSchema = z.object({
   COMMUNITY_CACHE_TTL_MS: z.coerce.number().default(3600000), // 1 hour
   COMMUNITY_VALIDATION_TIMEOUT_MS: z.coerce.number().default(30000),
   COMMUNITY_ALLOWED_DOMAINS: z.string().optional(), // Comma-separated list
-  
+
   // Development
   ENABLE_DEBUG_LOGGING: z.coerce.boolean().default(false),
   MOCK_EXTERNAL_APIS: z.coerce.boolean().default(false),
@@ -137,29 +137,35 @@ export const createConfigSections = (config: Config) => ({
     validationTimeoutMs: config.COMMUNITY_VALIDATION_TIMEOUT_MS,
     githubToken: config.GITHUB_TOKEN,
     githubWebhookSecret: config.GITHUB_WEBHOOK_SECRET,
-    allowedDomains: config.COMMUNITY_ALLOWED_DOMAINS?.split(',').map(d => d.trim()).filter(Boolean),
+    allowedDomains: config.COMMUNITY_ALLOWED_DOMAINS?.split(',')
+      .map((d) => d.trim())
+      .filter(Boolean),
   },
 });
 
 // Create community system configuration from main config
-export function createCommunitySystemConfig(config: Config): import('../community/types/index.js').CommunitySystemConfig {
+export function createCommunitySystemConfig(
+  config: Config
+): import('../community/types/index.js').CommunitySystemConfig {
   return {
     validation: {
       strictMode: config.COMMUNITY_STRICT_MODE,
       maxEndpoints: config.COMMUNITY_MAX_ENDPOINTS,
-      allowedDomains: config.COMMUNITY_ALLOWED_DOMAINS?.split(',').map(d => d.trim()).filter(Boolean),
-      requiredFields: ['name', 'version', 'description', 'author', 'license']
+      allowedDomains: config.COMMUNITY_ALLOWED_DOMAINS?.split(',')
+        .map((d) => d.trim())
+        .filter(Boolean),
+      requiredFields: ['name', 'version', 'description', 'author', 'license'],
     },
     loading: {
       timeout: config.COMMUNITY_VALIDATION_TIMEOUT_MS,
       retries: 3,
-      cacheTTL: config.COMMUNITY_CACHE_TTL_MS
+      cacheTTL: config.COMMUNITY_CACHE_TTL_MS,
     },
     github: {
       repository: config.COMMUNITY_REPOSITORY,
       token: config.GITHUB_TOKEN,
       webhookSecret: config.GITHUB_WEBHOOK_SECRET,
-      autoMerge: config.COMMUNITY_AUTO_MERGE
-    }
+      autoMerge: config.COMMUNITY_AUTO_MERGE,
+    },
   };
 }

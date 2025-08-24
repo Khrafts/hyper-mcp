@@ -6,7 +6,7 @@ import {
   ParameterDefinition,
   ValidationResult,
   ValidationError,
-  ValidationWarning
+  ValidationWarning,
 } from '../types/index.js';
 
 export interface ValidationConfig {
@@ -41,7 +41,7 @@ export class ProtocolValidator {
       minimum: z.number().optional(),
       maximum: z.number().optional(),
       items: z.lazy(() => this.parameterSchema).optional(),
-      properties: z.record(z.lazy(() => this.parameterSchema)).optional()
+      properties: z.record(z.lazy(() => this.parameterSchema)).optional(),
     });
 
     // Response definition schema
@@ -49,7 +49,7 @@ export class ProtocolValidator {
       type: z.enum(['string', 'number', 'boolean', 'object', 'array']),
       description: z.string().min(1),
       properties: z.record(this.parameterSchema).optional(),
-      items: this.parameterSchema.optional()
+      items: this.parameterSchema.optional(),
     });
 
     // Endpoint schema
@@ -61,10 +61,12 @@ export class ProtocolValidator {
       parameters: z.array(this.parameterSchema).optional(),
       response: responseSchema,
       authentication: z.boolean().optional(),
-      rateLimit: z.object({
-        requests: z.number().positive(),
-        window: z.string().min(1)
-      }).optional()
+      rateLimit: z
+        .object({
+          requests: z.number().positive(),
+          window: z.string().min(1),
+        })
+        .optional(),
     });
 
     // Authentication config schema
@@ -72,20 +74,26 @@ export class ProtocolValidator {
       type: z.enum(['api_key', 'bearer_token', 'basic', 'oauth2']),
       location: z.enum(['header', 'query', 'cookie']).optional(),
       name: z.string().optional(),
-      scheme: z.string().optional()
+      scheme: z.string().optional(),
     });
 
     // Rate limit config schema
     const rateLimitSchema = z.object({
       requests: z.number().positive(),
       window: z.string().min(1),
-      burst: z.number().positive().optional()
+      burst: z.number().positive().optional(),
     });
 
     // Main protocol schema
     this.protocolSchema = z.object({
-      name: z.string().min(1).regex(/^[a-zA-Z][a-zA-Z0-9-_]*$/),
-      version: z.string().min(1).regex(/^\d+\.\d+\.\d+$/),
+      name: z
+        .string()
+        .min(1)
+        .regex(/^[a-zA-Z][a-zA-Z0-9-_]*$/),
+      version: z
+        .string()
+        .min(1)
+        .regex(/^\d+\.\d+\.\d+$/),
       description: z.string().min(10),
       author: z.string().min(1),
       repository: z.string().url().optional(),
@@ -94,7 +102,7 @@ export class ProtocolValidator {
       endpoints: z.array(this.endpointSchema).min(1),
       authentication: authSchema.optional(),
       rateLimit: rateLimitSchema.optional(),
-      metadata: z.record(z.any()).optional()
+      metadata: z.record(z.any()).optional(),
     });
   }
 
@@ -127,31 +135,36 @@ export class ProtocolValidator {
 
       logger.debug(`Validation completed for ${protocol.name}`, {
         errors: errors.length,
-        warnings: warnings.length
+        warnings: warnings.length,
       });
 
       return {
         valid: errors.length === 0,
         errors,
-        warnings
+        warnings,
       };
     } catch (error) {
       const protocolName = protocol?.name || 'unknown';
       logger.error(`Validation error for protocol ${protocolName}:`, error);
       return {
         valid: false,
-        errors: [{
-          code: 'VALIDATION_ERROR',
-          message: `Internal validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          path: '',
-          severity: 'error'
-        }],
-        warnings: []
+        errors: [
+          {
+            code: 'VALIDATION_ERROR',
+            message: `Internal validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            path: '',
+            severity: 'error',
+          },
+        ],
+        warnings: [],
       };
     }
   }
 
-  private validateSchema(protocol: CommunityProtocol): { errors: ValidationError[]; warnings: ValidationWarning[] } {
+  private validateSchema(protocol: CommunityProtocol): {
+    errors: ValidationError[];
+    warnings: ValidationWarning[];
+  } {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
@@ -164,7 +177,7 @@ export class ProtocolValidator {
             code: 'SCHEMA_VALIDATION',
             message: issue.message,
             path: issue.path.join('.'),
-            severity: 'error'
+            severity: 'error',
           });
         }
       } else {
@@ -172,7 +185,7 @@ export class ProtocolValidator {
           code: 'SCHEMA_ERROR',
           message: `Schema validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
           path: '',
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -180,7 +193,10 @@ export class ProtocolValidator {
     return { errors, warnings };
   }
 
-  private validateBusinessLogic(protocol: CommunityProtocol): { errors: ValidationError[]; warnings: ValidationWarning[] } {
+  private validateBusinessLogic(protocol: CommunityProtocol): {
+    errors: ValidationError[];
+    warnings: ValidationWarning[];
+  } {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
@@ -190,7 +206,7 @@ export class ProtocolValidator {
         code: 'TOO_MANY_ENDPOINTS',
         message: `Protocol has ${protocol.endpoints.length} endpoints, maximum allowed is ${this.config.maxEndpoints}`,
         path: 'endpoints',
-        severity: 'error'
+        severity: 'error',
       });
     }
 
@@ -202,7 +218,7 @@ export class ProtocolValidator {
           code: 'DUPLICATE_ENDPOINT',
           message: `Duplicate endpoint name: ${endpoint.name}`,
           path: `endpoints.${index}.name`,
-          severity: 'error'
+          severity: 'error',
         });
       }
       endpointNames.add(endpoint.name);
@@ -217,7 +233,7 @@ export class ProtocolValidator {
           code: 'DUPLICATE_PATH_METHOD',
           message: `Duplicate path and method combination: ${endpoint.method} ${endpoint.path}`,
           path: `endpoints.${index}`,
-          severity: 'error'
+          severity: 'error',
         });
       }
       pathMethods.add(key);
@@ -231,14 +247,14 @@ export class ProtocolValidator {
             code: 'MISSING_REQUIRED_FIELD',
             message: `Required field missing: ${field}`,
             path: field,
-            severity: 'error'
+            severity: 'error',
           });
         } else {
           warnings.push({
             code: 'MISSING_RECOMMENDED_FIELD',
             message: `Recommended field missing: ${field}`,
             path: field,
-            severity: 'warning'
+            severity: 'warning',
           });
         }
       }
@@ -248,7 +264,10 @@ export class ProtocolValidator {
     protocol.endpoints.forEach((endpoint: ProtocolEndpoint, endpointIndex: number) => {
       if (endpoint.parameters) {
         endpoint.parameters.forEach((param: ParameterDefinition, paramIndex: number) => {
-          const paramResult = this.validateParameter(param, `endpoints.${endpointIndex}.parameters.${paramIndex}`);
+          const paramResult = this.validateParameter(
+            param,
+            `endpoints.${endpointIndex}.parameters.${paramIndex}`
+          );
           errors.push(...paramResult.errors);
           warnings.push(...paramResult.warnings);
         });
@@ -273,19 +292,23 @@ export class ProtocolValidator {
           code: 'INVALID_ENUM_TYPE',
           message: `Enum values don't match parameter type ${param.type}`,
           path: `${basePath}.enum`,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
 
     // Validate number constraints
     if (param.type === 'number') {
-      if (param.minimum !== undefined && param.maximum !== undefined && param.minimum >= param.maximum) {
+      if (
+        param.minimum !== undefined &&
+        param.maximum !== undefined &&
+        param.minimum >= param.maximum
+      ) {
         errors.push({
           code: 'INVALID_NUMBER_RANGE',
           message: 'Minimum value must be less than maximum value',
           path: basePath,
-          severity: 'error'
+          severity: 'error',
         });
       }
     }
@@ -296,7 +319,7 @@ export class ProtocolValidator {
         code: 'MISSING_ARRAY_ITEMS',
         message: 'Array parameter missing items definition',
         path: `${basePath}.items`,
-        severity: 'warning'
+        severity: 'warning',
       });
     }
 
@@ -306,14 +329,17 @@ export class ProtocolValidator {
         code: 'MISSING_OBJECT_PROPERTIES',
         message: 'Object parameter missing properties definition',
         path: `${basePath}.properties`,
-        severity: 'warning'
+        severity: 'warning',
       });
     }
 
     return { errors, warnings };
   }
 
-  private validateSecurity(protocol: CommunityProtocol): { errors: ValidationError[]; warnings: ValidationWarning[] } {
+  private validateSecurity(protocol: CommunityProtocol): {
+    errors: ValidationError[];
+    warnings: ValidationWarning[];
+  } {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
@@ -323,7 +349,7 @@ export class ProtocolValidator {
         code: 'NO_AUTHENTICATION',
         message: 'Protocol does not specify authentication configuration',
         path: 'authentication',
-        severity: 'warning'
+        severity: 'warning',
       });
     }
 
@@ -333,7 +359,7 @@ export class ProtocolValidator {
         code: 'NO_RATE_LIMIT',
         message: 'Protocol does not specify rate limiting configuration',
         path: 'rateLimit',
-        severity: 'warning'
+        severity: 'warning',
       });
     }
 
@@ -343,18 +369,22 @@ export class ProtocolValidator {
         code: 'INSECURE_REPOSITORY_URL',
         message: 'Repository URL should use HTTPS',
         path: 'repository',
-        severity: 'warning'
+        severity: 'warning',
       });
     }
 
     // Check endpoints for sensitive data in URLs
     protocol.endpoints.forEach((endpoint: ProtocolEndpoint, index: number) => {
-      if (endpoint.path.includes('password') || endpoint.path.includes('secret') || endpoint.path.includes('key')) {
+      if (
+        endpoint.path.includes('password') ||
+        endpoint.path.includes('secret') ||
+        endpoint.path.includes('key')
+      ) {
         warnings.push({
           code: 'SENSITIVE_DATA_IN_URL',
           message: 'Endpoint path contains potentially sensitive terms',
           path: `endpoints.${index}.path`,
-          severity: 'warning'
+          severity: 'warning',
         });
       }
     });
@@ -362,7 +392,10 @@ export class ProtocolValidator {
     return { errors, warnings };
   }
 
-  private validateDomains(protocol: CommunityProtocol): { errors: ValidationError[]; warnings: ValidationWarning[] } {
+  private validateDomains(protocol: CommunityProtocol): {
+    errors: ValidationError[];
+    warnings: ValidationWarning[];
+  } {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
@@ -375,13 +408,13 @@ export class ProtocolValidator {
       try {
         const url = new URL(protocol.repository);
         const domain = url.hostname;
-        
+
         if (!this.config.allowedDomains.includes(domain)) {
           errors.push({
             code: 'DOMAIN_NOT_ALLOWED',
             message: `Repository domain '${domain}' is not in allowed domains list`,
             path: 'repository',
-            severity: 'error'
+            severity: 'error',
           });
         }
       } catch (error) {
@@ -389,7 +422,7 @@ export class ProtocolValidator {
           code: 'INVALID_REPOSITORY_URL',
           message: 'Repository URL format is invalid',
           path: 'repository',
-          severity: 'warning'
+          severity: 'warning',
         });
       }
     }
@@ -424,7 +457,7 @@ export class ProtocolValidator {
             code: 'ENDPOINT_SCHEMA_VALIDATION',
             message: issue.message,
             path: issue.path.join('.'),
-            severity: 'error'
+            severity: 'error',
           });
         }
       }
@@ -433,7 +466,7 @@ export class ProtocolValidator {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 }

@@ -3,7 +3,7 @@ import {
   CommunityProtocol,
   ProtocolEndpoint,
   ParameterDefinition,
-  PropertySchema
+  PropertySchema,
 } from '../types/index.js';
 
 export interface MCPToolSchema {
@@ -33,21 +33,23 @@ export class SchemaGenerator {
 
   generateSchema(protocol: CommunityProtocol): GeneratedSchema {
     try {
-      const tools = protocol.endpoints.map(endpoint => this.generateToolSchema(endpoint, protocol));
-      
+      const tools = protocol.endpoints.map((endpoint) =>
+        this.generateToolSchema(endpoint, protocol)
+      );
+
       const schema: GeneratedSchema = {
         tools,
         metadata: {
           protocol: protocol.name,
           version: protocol.version,
           generatedAt: new Date(),
-          endpoints: protocol.endpoints.length
-        }
+          endpoints: protocol.endpoints.length,
+        },
       };
 
       logger.debug(`Generated schema for ${protocol.name}`, {
         toolCount: tools.length,
-        protocol: protocol.name
+        protocol: protocol.name,
       });
 
       return schema;
@@ -57,7 +59,10 @@ export class SchemaGenerator {
     }
   }
 
-  private generateToolSchema(endpoint: ProtocolEndpoint, protocol: CommunityProtocol): MCPToolSchema {
+  private generateToolSchema(
+    endpoint: ProtocolEndpoint,
+    protocol: CommunityProtocol
+  ): MCPToolSchema {
     const toolName = this.generateToolName(endpoint, protocol);
     const properties: Record<string, any> = {};
     const required: string[] = [];
@@ -81,8 +86,8 @@ export class SchemaGenerator {
       parameters: {
         type: 'object',
         properties,
-        ...(required.length > 0 && { required })
-      }
+        ...(required.length > 0 && { required }),
+      },
     };
   }
 
@@ -93,35 +98,35 @@ export class SchemaGenerator {
     if (!protocol || !protocol.name) {
       throw new Error('Protocol name is required');
     }
-    
+
     // Convert protocol name and endpoint name to camelCase
     const protocolName = this.toCamelCase(protocol.name);
     const endpointName = this.toCamelCase(endpoint.name);
-    
+
     // Combine them with an underscore for MCP tool naming
     return `${protocolName}_${endpointName}`;
   }
 
   private generateToolDescription(endpoint: ProtocolEndpoint, protocol: CommunityProtocol): string {
     let description = `${endpoint.description}`;
-    
+
     if (endpoint.authentication && protocol.authentication) {
       description += ` (Requires authentication: ${protocol.authentication.type})`;
     }
-    
+
     if (endpoint.rateLimit) {
       description += ` (Rate limited: ${endpoint.rateLimit.requests} requests per ${endpoint.rateLimit.window})`;
     }
 
     description += ` [${protocol.name} v${protocol.version}]`;
-    
+
     return description;
   }
 
   private convertParameterToJsonSchema(param: ParameterDefinition | PropertySchema): any {
     const schema: any = {
       type: param.type,
-      description: param.description
+      description: param.description,
     };
 
     // Add default value if present
@@ -168,13 +173,15 @@ export class SchemaGenerator {
         if (param.properties) {
           schema.properties = {};
           const requiredProps: string[] = [];
-          
-          Object.entries(param.properties).forEach(([propName, propDef]: [string, PropertySchema]) => {
-            schema.properties[propName] = this.convertParameterToJsonSchema(propDef);
-            if (propDef.required) {
-              requiredProps.push(propName);
+
+          Object.entries(param.properties).forEach(
+            ([propName, propDef]: [string, PropertySchema]) => {
+              schema.properties[propName] = this.convertParameterToJsonSchema(propDef);
+              if (propDef.required) {
+                requiredProps.push(propName);
+              }
             }
-          });
+          );
 
           if (requiredProps.length > 0) {
             schema.required = requiredProps;
@@ -207,7 +214,7 @@ export class SchemaGenerator {
       description: 'Request timeout in milliseconds',
       minimum: 1000,
       maximum: 60000,
-      default: 10000
+      default: 10000,
     };
 
     // Add retry parameter (optional for all requests)
@@ -216,7 +223,7 @@ export class SchemaGenerator {
       description: 'Number of retry attempts on failure',
       minimum: 0,
       maximum: 5,
-      default: 2
+      default: 2,
     };
   }
 
@@ -228,8 +235,8 @@ export class SchemaGenerator {
           schema: {
             type: 'string',
             description: 'API key for authentication',
-            minLength: 1
-          }
+            minLength: 1,
+          },
         };
 
       case 'bearer_token':
@@ -238,8 +245,8 @@ export class SchemaGenerator {
           schema: {
             type: 'string',
             description: 'Bearer token for authentication',
-            minLength: 1
-          }
+            minLength: 1,
+          },
         };
 
       case 'basic':
@@ -251,15 +258,15 @@ export class SchemaGenerator {
             properties: {
               username: {
                 type: 'string',
-                description: 'Username for basic authentication'
+                description: 'Username for basic authentication',
               },
               password: {
                 type: 'string',
-                description: 'Password for basic authentication'
-              }
+                description: 'Password for basic authentication',
+              },
             },
-            required: ['username', 'password']
-          }
+            required: ['username', 'password'],
+          },
         };
 
       case 'oauth2':
@@ -268,8 +275,8 @@ export class SchemaGenerator {
           schema: {
             type: 'string',
             description: 'OAuth2 access token',
-            minLength: 1
-          }
+            minLength: 1,
+          },
         };
 
       default:
@@ -278,33 +285,35 @@ export class SchemaGenerator {
   }
 
   private toCamelCase(str: string): string {
-    return str
-      // Split by word boundaries, dashes, underscores
-      .replace(/[-_\s]+(.)?/g, (_, char) => char ? char.toUpperCase() : '')
-      // Handle version numbers like "v2" -> "V2"
-      .replace(/v(\d+)/g, 'V$1')
-      // First character lowercase
-      .replace(/^./, char => char.toLowerCase());
+    return (
+      str
+        // Split by word boundaries, dashes, underscores
+        .replace(/[-_\s]+(.)?/g, (_, char) => (char ? char.toUpperCase() : ''))
+        // Handle version numbers like "v2" -> "V2"
+        .replace(/v(\d+)/g, 'V$1')
+        // First character lowercase
+        .replace(/^./, (char) => char.toLowerCase())
+    );
   }
 
   generateSchemaDocumentation(schema: GeneratedSchema): string {
     const { tools, metadata } = schema;
-    
+
     let doc = `# ${metadata.protocol} v${metadata.version} - MCP Tools\n\n`;
     doc += `Generated on: ${metadata.generatedAt.toISOString()}\n`;
     doc += `Total tools: ${tools.length}\n\n`;
 
-    tools.forEach(tool => {
+    tools.forEach((tool) => {
       doc += `## ${tool.name}\n\n`;
       doc += `${tool.description}\n\n`;
       doc += `### Parameters\n\n`;
-      
+
       if (Object.keys(tool.parameters.properties).length === 0) {
         doc += `No parameters required.\n\n`;
       } else {
         doc += `| Parameter | Type | Required | Description |\n`;
         doc += `|-----------|------|----------|-------------|\n`;
-        
+
         Object.entries(tool.parameters.properties).forEach(([name, param]: [string, any]) => {
           const required = tool.parameters.required?.includes(name) ? 'Yes' : 'No';
           doc += `| ${name} | ${param.type} | ${required} | ${param.description} |\n`;
@@ -326,7 +335,7 @@ export class SchemaGenerator {
 
     // Validate tool names are unique
     const toolNames = new Set<string>();
-    schema.tools.forEach(tool => {
+    schema.tools.forEach((tool) => {
       if (toolNames.has(tool.name)) {
         errors.push(`Duplicate tool name: ${tool.name}`);
       }
@@ -334,7 +343,7 @@ export class SchemaGenerator {
     });
 
     // Validate tool names follow MCP conventions
-    schema.tools.forEach(tool => {
+    schema.tools.forEach((tool) => {
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tool.name)) {
         errors.push(`Invalid tool name format: ${tool.name}`);
       }
@@ -353,13 +362,15 @@ export class SchemaGenerator {
     });
 
     // Validate parameters
-    schema.tools.forEach(tool => {
+    schema.tools.forEach((tool) => {
       const { properties, required = [] } = tool.parameters;
-      
+
       // Check required parameters exist in properties
-      required.forEach(reqParam => {
+      required.forEach((reqParam) => {
         if (!properties[reqParam]) {
-          errors.push(`Required parameter '${reqParam}' not found in properties for tool: ${tool.name}`);
+          errors.push(
+            `Required parameter '${reqParam}' not found in properties for tool: ${tool.name}`
+          );
         }
       });
 
@@ -378,7 +389,7 @@ export class SchemaGenerator {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 }

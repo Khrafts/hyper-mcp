@@ -4,11 +4,7 @@ import fs from 'fs/promises';
 import { logger } from '../../utils/logger.js';
 import { ToolGenerator } from '../generation/ToolGenerator.js';
 import { ProtocolValidator } from '../validation/ProtocolValidator.js';
-import {
-  CommunityProtocol,
-  LoadedProtocol,
-  GeneratedTool
-} from '../types/index.js';
+import { CommunityProtocol, LoadedProtocol, GeneratedTool } from '../types/index.js';
 
 export interface LoadingConfig {
   timeout: number;
@@ -41,23 +37,23 @@ export class DynamicLoader extends EventEmitter {
       maxConcurrentLoads: 5,
       allowRemoteLoading: false,
       trustedSources: [],
-      ...config
+      ...config,
     };
 
     this.toolGenerator = new ToolGenerator({
       timeout: config.timeout,
-      retries: config.retries
+      retries: config.retries,
     });
 
     this.validator = new ProtocolValidator({
       strictMode: true,
       maxEndpoints: 50,
-      requiredFields: ['name', 'version', 'description', 'author', 'license']
+      requiredFields: ['name', 'version', 'description', 'author', 'license'],
     });
 
     this.setupEventListeners();
     this.startCacheCleanup();
-    
+
     logger.debug('DynamicLoader initialized', { config });
   }
 
@@ -73,7 +69,7 @@ export class DynamicLoader extends EventEmitter {
 
   async load(protocol: CommunityProtocol): Promise<LoadedProtocol> {
     const protocolKey = `${protocol.name}@${protocol.version}`;
-    
+
     try {
       logger.info(`Loading protocol: ${protocolKey}`);
 
@@ -109,10 +105,10 @@ export class DynamicLoader extends EventEmitter {
         this.loadingQueue.delete(protocolKey);
         this.loadedProtocols.set(protocolKey, loadedProtocol);
         this.cacheProtocol(protocolKey, loadedProtocol);
-        
+
         this.emit('protocol:loaded', loadedProtocol);
         logger.info(`Successfully loaded protocol: ${protocolKey}`);
-        
+
         return loadedProtocol;
       } catch (error) {
         this.loadingQueue.delete(protocolKey);
@@ -120,18 +116,18 @@ export class DynamicLoader extends EventEmitter {
       }
     } catch (error) {
       logger.error(`Failed to load protocol ${protocolKey}:`, error);
-      
+
       const errorProtocol: LoadedProtocol = {
         protocol,
         tools: [],
         status: 'error',
         error: error instanceof Error ? error.message : 'Unknown loading error',
-        loadedAt: new Date()
+        loadedAt: new Date(),
       };
 
       this.loadedProtocols.set(protocolKey, errorProtocol);
       this.emit('protocol:error', protocolKey, error);
-      
+
       throw error;
     }
   }
@@ -141,7 +137,7 @@ export class DynamicLoader extends EventEmitter {
       protocol,
       tools: [],
       status: 'loading',
-      loadedAt: new Date()
+      loadedAt: new Date(),
     };
 
     try {
@@ -149,13 +145,15 @@ export class DynamicLoader extends EventEmitter {
       logger.debug(`Validating protocol: ${protocol.name}`);
       const validationResult = await this.validator.validate(protocol);
       if (!validationResult.valid) {
-        throw new Error(`Protocol validation failed: ${validationResult.errors.map((e: any) => e.message).join(', ')}`);
+        throw new Error(
+          `Protocol validation failed: ${validationResult.errors.map((e: any) => e.message).join(', ')}`
+        );
       }
 
       // Generate tools
       logger.debug(`Generating tools for protocol: ${protocol.name}`);
       const tools = await this.toolGenerator.generateTools(protocol);
-      
+
       // Validate generated tools
       const toolValidation = await this.toolGenerator.validateGeneratedTools(tools);
       if (!toolValidation.valid) {
@@ -182,7 +180,7 @@ export class DynamicLoader extends EventEmitter {
       const loadedProtocol = this.loadedProtocols.get(protocolKey);
       if (loadedProtocol) {
         this.loadedProtocols.delete(protocolKey);
-        
+
         // Cleanup tool handlers if needed
         await this.cleanupToolHandlers(loadedProtocol.tools);
       }
@@ -217,15 +215,17 @@ export class DynamicLoader extends EventEmitter {
   async loadFromFile(filePath: string): Promise<LoadedProtocol> {
     try {
       logger.debug(`Loading protocol from file: ${filePath}`);
-      
+
       const absolutePath = path.resolve(filePath);
       const fileContent = await fs.readFile(absolutePath, 'utf-8');
       const protocol: CommunityProtocol = JSON.parse(fileContent);
-      
+
       return this.load(protocol);
     } catch (error) {
       logger.error(`Failed to load protocol from file ${filePath}:`, error);
-      throw new Error(`Failed to load protocol from file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to load protocol from file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -238,39 +238,41 @@ export class DynamicLoader extends EventEmitter {
       // Check if source is trusted
       if (this.config.trustedSources && this.config.trustedSources.length > 0) {
         const urlObj = new URL(url);
-        const isTrusted = this.config.trustedSources.some(source => 
-          urlObj.hostname === source || urlObj.hostname.endsWith(`.${source}`)
+        const isTrusted = this.config.trustedSources.some(
+          (source) => urlObj.hostname === source || urlObj.hostname.endsWith(`.${source}`)
         );
-        
+
         if (!isTrusted) {
           throw new Error(`Untrusted source: ${urlObj.hostname}`);
         }
       }
 
       logger.debug(`Loading protocol from URL: ${url}`);
-      
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
-      
+
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'HyperMCP-DynamicLoader/1.0'
-        }
+          Accept: 'application/json',
+          'User-Agent': 'HyperMCP-DynamicLoader/1.0',
+        },
       });
-      
+
       clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const protocol = await response.json() as CommunityProtocol;
+      const protocol = (await response.json()) as CommunityProtocol;
       return this.load(protocol);
     } catch (error) {
       logger.error(`Failed to load protocol from URL ${url}:`, error);
-      throw new Error(`Failed to load protocol from URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to load protocol from URL: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -298,7 +300,7 @@ export class DynamicLoader extends EventEmitter {
       cachedAt: now,
       expiresAt,
       accessCount: 1,
-      lastAccessed: now
+      lastAccessed: now,
     });
 
     logger.debug(`Cached protocol: ${protocolKey}`, { expiresAt });
@@ -328,9 +330,12 @@ export class DynamicLoader extends EventEmitter {
 
   private startCacheCleanup(): void {
     // Run cache cleanup every 5 minutes
-    setInterval(() => {
-      this.cleanupExpiredCache();
-    }, 5 * 60 * 1000);
+    setInterval(
+      () => {
+        this.cleanupExpiredCache();
+      },
+      5 * 60 * 1000
+    );
   }
 
   private cleanupExpiredCache(): void {
@@ -343,7 +348,7 @@ export class DynamicLoader extends EventEmitter {
       }
     }
 
-    expiredKeys.forEach(key => {
+    expiredKeys.forEach((key) => {
       this.cache.delete(key);
       logger.debug(`Removed expired cache entry: ${key}`);
     });
@@ -379,18 +384,20 @@ export class DynamicLoader extends EventEmitter {
     newestEntry?: Date;
   } {
     const cacheEntries = Array.from(this.cache.values());
-    
+
     return {
       size: this.cache.size,
       hits: 0, // TODO: Implement hit/miss tracking
       misses: 0,
       totalAccess: cacheEntries.reduce((sum, entry) => sum + entry.accessCount, 0),
-      oldestEntry: cacheEntries.length > 0 
-        ? new Date(Math.min(...cacheEntries.map(e => e.cachedAt.getTime())))
-        : undefined,
-      newestEntry: cacheEntries.length > 0
-        ? new Date(Math.max(...cacheEntries.map(e => e.cachedAt.getTime())))
-        : undefined
+      oldestEntry:
+        cacheEntries.length > 0
+          ? new Date(Math.min(...cacheEntries.map((e) => e.cachedAt.getTime())))
+          : undefined,
+      newestEntry:
+        cacheEntries.length > 0
+          ? new Date(Math.max(...cacheEntries.map((e) => e.cachedAt.getTime())))
+          : undefined,
     };
   }
 
@@ -402,13 +409,13 @@ export class DynamicLoader extends EventEmitter {
     queueLength: number;
   } {
     const protocols = Array.from(this.loadedProtocols.values());
-    
+
     return {
-      loaded: protocols.filter(p => p.status === 'loaded').length,
-      loading: protocols.filter(p => p.status === 'loading').length,
-      error: protocols.filter(p => p.status === 'error').length,
+      loaded: protocols.filter((p) => p.status === 'loaded').length,
+      loading: protocols.filter((p) => p.status === 'loading').length,
+      error: protocols.filter((p) => p.status === 'error').length,
       cached: this.cache.size,
-      queueLength: this.loadingQueue.size
+      queueLength: this.loadingQueue.size,
     };
   }
 
@@ -425,9 +432,13 @@ export class DynamicLoader extends EventEmitter {
 
     // Unload all protocols
     const protocolKeys = Array.from(this.loadedProtocols.keys());
-    await Promise.all(protocolKeys.map(key => this.unload(key).catch(err => 
-      logger.warn(`Failed to unload protocol during shutdown: ${key}`, err)
-    )));
+    await Promise.all(
+      protocolKeys.map((key) =>
+        this.unload(key).catch((err) =>
+          logger.warn(`Failed to unload protocol during shutdown: ${key}`, err)
+        )
+      )
+    );
 
     // Clear cache
     await this.clearCache();

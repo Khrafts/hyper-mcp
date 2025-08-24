@@ -2,11 +2,7 @@ import { EventEmitter } from 'events';
 import axios, { AxiosInstance } from 'axios';
 import crypto from 'crypto';
 import { logger } from '../../utils/logger.js';
-import {
-  CommunityProtocol,
-  GitHubSubmission,
-  ValidationResult
-} from '../types/index.js';
+import { CommunityProtocol, GitHubSubmission, ValidationResult } from '../types/index.js';
 
 export interface GitHubConfig {
   repository: string;
@@ -35,7 +31,7 @@ export class GitHubIntegration extends EventEmitter {
   constructor(config: GitHubConfig) {
     super();
     this.config = config;
-    
+
     // Parse repository string (format: owner/repo)
     const [owner, repo] = config.repository.split('/');
     if (!owner || !repo) {
@@ -49,19 +45,19 @@ export class GitHubIntegration extends EventEmitter {
       this.github = axios.create({
         baseURL: 'https://api.github.com',
         headers: {
-          'Authorization': `token ${config.token}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'HyperMCP-Community-Bot/1.0'
+          Authorization: `token ${config.token}`,
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'HyperMCP-Community-Bot/1.0',
         },
-        timeout: 30000
+        timeout: 30000,
       });
     } else {
       logger.warn('GitHub token not provided. Limited functionality available.');
     }
 
-    logger.debug('GitHubIntegration initialized', { 
+    logger.debug('GitHubIntegration initialized', {
       repository: config.repository,
-      hasToken: !!config.token 
+      hasToken: !!config.token,
     });
   }
 
@@ -97,10 +93,12 @@ export class GitHubIntegration extends EventEmitter {
 
     const receivedSignature = signature.replace('sha256=', '');
 
-    if (!crypto.timingSafeEqual(
-      Buffer.from(expectedSignature, 'hex'),
-      Buffer.from(receivedSignature, 'hex')
-    )) {
+    if (
+      !crypto.timingSafeEqual(
+        Buffer.from(expectedSignature, 'hex'),
+        Buffer.from(receivedSignature, 'hex')
+      )
+    ) {
       throw new Error('Invalid webhook signature');
     }
   }
@@ -113,13 +111,15 @@ export class GitHubIntegration extends EventEmitter {
         protocolPath: await this.findProtocolPath(pullRequest.number),
         status: 'pending',
         createdAt: new Date(pullRequest.created_at),
-        updatedAt: new Date(pullRequest.updated_at)
+        updatedAt: new Date(pullRequest.updated_at),
       };
 
       this.submissions.set(pullRequest.number, submission);
       this.emit('submission:received', submission);
 
-      logger.info(`New protocol submission received: PR #${pullRequest.number} by ${pullRequest.user.login}`);
+      logger.info(
+        `New protocol submission received: PR #${pullRequest.number} by ${pullRequest.user.login}`
+      );
     } catch (error) {
       logger.error(`Failed to handle pull request #${pullRequest.number}:`, error);
       throw error;
@@ -138,7 +138,7 @@ export class GitHubIntegration extends EventEmitter {
       const response = await this.github.get(
         `/repos/${this.owner}/${this.repo}/contents/${submission.protocolPath}`,
         {
-          params: { ref: `pull/${submission.pullRequestNumber}/head` }
+          params: { ref: `pull/${submission.pullRequestNumber}/head` },
         }
       );
 
@@ -146,7 +146,7 @@ export class GitHubIntegration extends EventEmitter {
       if (fileContent.content) {
         const content = Buffer.from(fileContent.content, 'base64').toString('utf-8');
         const protocol: CommunityProtocol = JSON.parse(content);
-        
+
         logger.debug(`Successfully retrieved protocol: ${protocol.name}@${protocol.version}`);
         return protocol;
       } else {
@@ -165,14 +165,17 @@ export class GitHubIntegration extends EventEmitter {
 
     try {
       // Get list of files changed in the PR
-      const response = await this.github.get(`/repos/${this.owner}/${this.repo}/pulls/${prNumber}/files`);
+      const response = await this.github.get(
+        `/repos/${this.owner}/${this.repo}/pulls/${prNumber}/files`
+      );
       const files = response.data;
 
       // Find protocol files (assuming .json extension and specific directory structure)
-      const protocolFiles = files.filter((file: any) => 
-        file.filename.includes('protocols/') && 
-        file.filename.endsWith('.json') &&
-        file.status !== 'removed'
+      const protocolFiles = files.filter(
+        (file: any) =>
+          file.filename.includes('protocols/') &&
+          file.filename.endsWith('.json') &&
+          file.status !== 'removed'
       );
 
       if (protocolFiles.length === 0) {
@@ -204,16 +207,22 @@ export class GitHubIntegration extends EventEmitter {
         comment += this.generateValidationComment(submission.validationResults);
       }
 
-      await this.github.post(`/repos/${this.owner}/${this.repo}/issues/${submission.pullRequestNumber}/comments`, {
-        body: comment
-      });
+      await this.github.post(
+        `/repos/${this.owner}/${this.repo}/issues/${submission.pullRequestNumber}/comments`,
+        {
+          body: comment,
+        }
+      );
 
       // Update labels based on status
       await this.updatePullRequestLabels(submission);
 
       logger.info(`Updated status for PR #${submission.pullRequestNumber}: ${submission.status}`);
     } catch (error) {
-      logger.error(`Failed to update submission status for PR #${submission.pullRequestNumber}:`, error);
+      logger.error(
+        `Failed to update submission status for PR #${submission.pullRequestNumber}:`,
+        error
+      );
       throw error;
     }
   }
@@ -223,7 +232,7 @@ export class GitHubIntegration extends EventEmitter {
       pending: '⏳',
       validated: '✅',
       approved: '🎉',
-      rejected: '❌'
+      rejected: '❌',
     };
 
     let comment = `## ${statusEmoji[submission.status as keyof typeof statusEmoji]} Protocol Validation Status: ${submission.status.toUpperCase()}\n\n`;
@@ -301,9 +310,12 @@ export class GitHubIntegration extends EventEmitter {
           break;
       }
 
-      await this.github.put(`/repos/${this.owner}/${this.repo}/issues/${submission.pullRequestNumber}/labels`, {
-        labels
-      });
+      await this.github.put(
+        `/repos/${this.owner}/${this.repo}/issues/${submission.pullRequestNumber}/labels`,
+        {
+          labels,
+        }
+      );
     } catch (error) {
       logger.warn(`Failed to update labels for PR #${submission.pullRequestNumber}:`, error);
     }
@@ -316,25 +328,31 @@ export class GitHubIntegration extends EventEmitter {
 
     try {
       // Add approval review
-      await this.github.post(`/repos/${this.owner}/${this.repo}/pulls/${submission.pullRequestNumber}/reviews`, {
-        event: 'APPROVE',
-        body: 'Protocol validation passed. This submission has been automatically approved.'
-      });
+      await this.github.post(
+        `/repos/${this.owner}/${this.repo}/pulls/${submission.pullRequestNumber}/reviews`,
+        {
+          event: 'APPROVE',
+          body: 'Protocol validation passed. This submission has been automatically approved.',
+        }
+      );
 
       // Merge if auto-merge is enabled
       if (this.config.autoMerge) {
-        await this.github.put(`/repos/${this.owner}/${this.repo}/pulls/${submission.pullRequestNumber}/merge`, {
-          commit_title: `Add community protocol: ${submission.protocolPath}`,
-          commit_message: 'Automatically merged after successful validation.',
-          merge_method: 'squash'
-        });
+        await this.github.put(
+          `/repos/${this.owner}/${this.repo}/pulls/${submission.pullRequestNumber}/merge`,
+          {
+            commit_title: `Add community protocol: ${submission.protocolPath}`,
+            commit_message: 'Automatically merged after successful validation.',
+            merge_method: 'squash',
+          }
+        );
 
         logger.info(`Auto-merged PR #${submission.pullRequestNumber}`);
       }
 
       submission.status = 'approved';
       submission.updatedAt = new Date();
-      
+
       await this.updateSubmissionStatus(submission);
     } catch (error) {
       logger.error(`Failed to approve submission PR #${submission.pullRequestNumber}:`, error);
@@ -342,7 +360,10 @@ export class GitHubIntegration extends EventEmitter {
     }
   }
 
-  async rejectSubmission(submission: GitHubSubmission, validationResult: ValidationResult): Promise<void> {
+  async rejectSubmission(
+    submission: GitHubSubmission,
+    validationResult: ValidationResult
+  ): Promise<void> {
     if (!this.github) {
       logger.warn('Cannot reject submission without GitHub token');
       return;
@@ -350,15 +371,18 @@ export class GitHubIntegration extends EventEmitter {
 
     try {
       // Add rejection review
-      await this.github.post(`/repos/${this.owner}/${this.repo}/pulls/${submission.pullRequestNumber}/reviews`, {
-        event: 'REQUEST_CHANGES',
-        body: 'Protocol validation failed. Please address the issues and update your submission.'
-      });
+      await this.github.post(
+        `/repos/${this.owner}/${this.repo}/pulls/${submission.pullRequestNumber}/reviews`,
+        {
+          event: 'REQUEST_CHANGES',
+          body: 'Protocol validation failed. Please address the issues and update your submission.',
+        }
+      );
 
       submission.status = 'rejected';
       submission.validationResults = validationResult;
       submission.updatedAt = new Date();
-      
+
       await this.updateSubmissionStatus(submission);
 
       logger.info(`Rejected PR #${submission.pullRequestNumber}`);
@@ -378,10 +402,14 @@ export class GitHubIntegration extends EventEmitter {
     }
 
     try {
-      const prResponse = await this.github.get(`/repos/${this.owner}/${this.repo}/pulls/${prNumber}`);
+      const prResponse = await this.github.get(
+        `/repos/${this.owner}/${this.repo}/pulls/${prNumber}`
+      );
       const pr = prResponse.data;
 
-      const filesResponse = await this.github.get(`/repos/${this.owner}/${this.repo}/pulls/${prNumber}/files`);
+      const filesResponse = await this.github.get(
+        `/repos/${this.owner}/${this.repo}/pulls/${prNumber}/files`
+      );
       const files = filesResponse.data;
 
       return {
@@ -391,7 +419,7 @@ export class GitHubIntegration extends EventEmitter {
         body: pr.body || '',
         changedFiles: files.map((f: any) => f.filename),
         createdAt: new Date(pr.created_at),
-        updatedAt: new Date(pr.updated_at)
+        updatedAt: new Date(pr.updated_at),
       };
     } catch (error) {
       logger.error(`Failed to get pull request info for #${prNumber}:`, error);
@@ -455,26 +483,26 @@ If you have questions about the submission process, please:
     averageProcessingTime?: number;
   } {
     const submissions = Array.from(this.submissions.values());
-    
+
     return {
       totalSubmissions: submissions.length,
-      pendingSubmissions: submissions.filter(s => s.status === 'pending').length,
-      approvedSubmissions: submissions.filter(s => s.status === 'approved').length,
-      rejectedSubmissions: submissions.filter(s => s.status === 'rejected').length,
+      pendingSubmissions: submissions.filter((s) => s.status === 'pending').length,
+      approvedSubmissions: submissions.filter((s) => s.status === 'approved').length,
+      rejectedSubmissions: submissions.filter((s) => s.status === 'rejected').length,
       // TODO: Calculate average processing time
-      averageProcessingTime: undefined
+      averageProcessingTime: undefined,
     };
   }
 
   async shutdown(): Promise<void> {
     logger.info('Shutting down GitHubIntegration...');
-    
+
     // Clear submissions cache
     this.submissions.clear();
-    
+
     // Remove all listeners
     this.removeAllListeners();
-    
+
     logger.info('GitHubIntegration shutdown complete');
   }
 }

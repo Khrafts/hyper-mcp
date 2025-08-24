@@ -97,7 +97,7 @@ export interface GeneratedTool {
   name: string;
   description: string;
   parameters: any;
-  handler: Function;
+  handler: (...args: any[]) => Promise<any>;
   metadata: {
     protocol: string;
     version: string;

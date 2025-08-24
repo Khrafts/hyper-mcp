@@ -403,11 +403,13 @@ export class MCPServer implements IMCPServer {
     const sessionHealth = this._sessionManager.getHealthStatus();
     const toolHealth = this._toolRegistry.getHealthStatus();
     const adapterHealth = await this._adapterManager.getHealthStatus();
-    const communityHealth = this._communityManager ? {
-      initialized: true,
-      stats: this._communityManager.getStats(),
-      loaded_protocols: this._communityManager.getLoadedProtocols().length
-    } : { initialized: false };
+    const communityHealth = this._communityManager
+      ? {
+          initialized: true,
+          stats: this._communityManager.getStats(),
+          loaded_protocols: this._communityManager.getLoadedProtocols().length,
+        }
+      : { initialized: false };
     const uptime = this.isRunning ? Date.now() - this.startTime : 0;
 
     const healthy =
@@ -422,7 +424,12 @@ export class MCPServer implements IMCPServer {
         tools: toolHealth.details,
         adapters: adapterHealth,
         community: communityHealth,
-        capabilities: ['tools', 'logging', 'prompts', ...(this._communityManager ? ['community'] : [])],
+        capabilities: [
+          'tools',
+          'logging',
+          'prompts',
+          ...(this._communityManager ? ['community'] : []),
+        ],
         metadata: this._adapterManager.getAdapterMetadata(),
       },
     };
@@ -446,7 +453,7 @@ export class MCPServer implements IMCPServer {
       this._communityManager.on('protocol:error', (protocolName: string, error: Error) => {
         logger.error('Community protocol error', {
           protocol: protocolName,
-          error: error.message
+          error: error.message,
         });
       });
 
@@ -454,17 +461,17 @@ export class MCPServer implements IMCPServer {
         logger.info('Community submission processed', {
           pr_number: submission.pullRequestNumber,
           status: submission.status,
-          author: submission.author
+          author: submission.author,
         });
       });
 
       logger.info('Community system initialized successfully', {
         validation_config: config.validation,
-        github_config: { repository: config.github.repository, autoMerge: config.github.autoMerge }
+        github_config: { repository: config.github.repository, autoMerge: config.github.autoMerge },
       });
     } catch (error) {
       logger.error('Failed to initialize community system', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -481,11 +488,13 @@ export class MCPServer implements IMCPServer {
       // For demonstration - in real implementation, would load from file/URL
       // This would typically be called by the community manager automatically
       // when protocols are submitted via GitHub
-      throw new Error('Direct protocol loading not implemented - protocols are loaded via GitHub submissions');
+      throw new Error(
+        'Direct protocol loading not implemented - protocols are loaded via GitHub submissions'
+      );
     } catch (error) {
       logger.error('Failed to load community protocol', {
         protocol: protocolName,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -506,7 +515,7 @@ export class MCPServer implements IMCPServer {
     } catch (error) {
       logger.error('Failed to unload community protocol', {
         protocol: protocolName,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
       throw error;
     }
@@ -520,7 +529,7 @@ export class MCPServer implements IMCPServer {
       logger.info('Registering community protocol tools', {
         protocol: protocolName,
         version: loadedProtocol.protocol.version,
-        tool_count: loadedProtocol.tools.length
+        tool_count: loadedProtocol.tools.length,
       });
 
       // Register each tool with the MCP server
@@ -543,13 +552,13 @@ export class MCPServer implements IMCPServer {
           logger.debug('Community tool registered', {
             tool: tool.name,
             protocol: protocolName,
-            endpoint: tool.metadata.endpoint
+            endpoint: tool.metadata.endpoint,
           });
         } catch (error) {
           logger.error('Failed to register community tool', {
             tool: tool.name,
             protocol: protocolName,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           });
         }
       }
@@ -561,7 +570,7 @@ export class MCPServer implements IMCPServer {
         protocol: protocolName,
         version: loadedProtocol.protocol.version,
         registered_tools: toolNames.length,
-        total_community_protocols: this.communityToolsMap.size
+        total_community_protocols: this.communityToolsMap.size,
       });
 
       // Broadcast notification about new protocol
@@ -571,13 +580,13 @@ export class MCPServer implements IMCPServer {
           protocol: protocolName,
           version: loadedProtocol.protocol.version,
           tools: toolNames,
-          loaded_at: loadedProtocol.loadedAt
-        }
+          loaded_at: loadedProtocol.loadedAt,
+        },
       });
     } catch (error) {
       logger.error('Failed to process community protocol loading', {
         protocol: loadedProtocol.protocol.name,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }
@@ -592,7 +601,7 @@ export class MCPServer implements IMCPServer {
 
       logger.info('Unregistering community protocol tools', {
         protocol: protocolName,
-        tool_count: toolNames.length
+        tool_count: toolNames.length,
       });
 
       // Unregister tools from the tool registry
@@ -601,13 +610,13 @@ export class MCPServer implements IMCPServer {
           this._toolRegistry.unregister(toolName);
           logger.debug('Community tool unregistered', {
             tool: toolName,
-            protocol: protocolName
+            protocol: protocolName,
           });
         } catch (error) {
           logger.warn('Failed to unregister community tool', {
             tool: toolName,
             protocol: protocolName,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : String(error),
           });
         }
       }
@@ -618,7 +627,7 @@ export class MCPServer implements IMCPServer {
       logger.info('Community protocol unloaded successfully', {
         protocol: protocolName,
         unregistered_tools: toolNames.length,
-        remaining_community_protocols: this.communityToolsMap.size
+        remaining_community_protocols: this.communityToolsMap.size,
       });
 
       // Broadcast notification about protocol removal
@@ -627,13 +636,13 @@ export class MCPServer implements IMCPServer {
         params: {
           protocol: protocolName,
           tools_removed: toolNames,
-          unloaded_at: new Date()
-        }
+          unloaded_at: new Date(),
+        },
       });
     } catch (error) {
       logger.error('Failed to process community protocol unloading', {
         protocol: protocolName,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }
@@ -668,21 +677,23 @@ export class MCPServer implements IMCPServer {
         const stats = this._communityManager.getStats();
 
         return {
-          protocols: loadedProtocols.map(protocol => ({
+          protocols: loadedProtocols.map((protocol) => ({
             name: protocol.protocol.name,
             version: protocol.protocol.version,
             description: protocol.protocol.description,
             author: protocol.protocol.author,
             status: protocol.status,
             tools_count: protocol.tools.length,
-            loaded_at: protocol.loadedAt
+            loaded_at: protocol.loadedAt,
           })),
           stats,
           total_protocols: loadedProtocols.length,
-          community_tools: Array.from(this.communityToolsMap.entries()).map(([protocol, tools]) => ({
-            protocol,
-            tools
-          }))
+          community_tools: Array.from(this.communityToolsMap.entries()).map(
+            ([protocol, tools]) => ({
+              protocol,
+              tools,
+            })
+          ),
         };
       },
     });

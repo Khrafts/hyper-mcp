@@ -6,7 +6,7 @@ import {
   CommunityProtocol,
   ProtocolEndpoint,
   GeneratedTool,
-  AuthenticationConfig
+  AuthenticationConfig,
 } from '../types/index.js';
 
 export interface ToolGenerationOptions {
@@ -28,7 +28,7 @@ export class ToolGenerator extends EventEmitter {
     this.defaultOptions = {
       timeout: 10000,
       retries: 2,
-      ...options
+      ...options,
     };
     logger.debug('ToolGenerator initialized', { options });
   }
@@ -36,9 +36,9 @@ export class ToolGenerator extends EventEmitter {
   async generateTools(protocol: CommunityProtocol): Promise<GeneratedTool[]> {
     try {
       logger.info(`Generating tools for protocol: ${protocol.name}@${protocol.version}`);
-      
+
       const tools: GeneratedTool[] = [];
-      
+
       for (const endpoint of protocol.endpoints) {
         const tool = await this.generateTool(endpoint, protocol);
         tools.push(tool);
@@ -47,7 +47,7 @@ export class ToolGenerator extends EventEmitter {
 
       logger.info(`Generated ${tools.length} tools for protocol ${protocol.name}`);
       this.emit('tools:generated', { protocol: protocol.name, tools });
-      
+
       return tools;
     } catch (error) {
       logger.error(`Failed to generate tools for protocol ${protocol.name}:`, error);
@@ -56,7 +56,10 @@ export class ToolGenerator extends EventEmitter {
     }
   }
 
-  private async generateTool(endpoint: ProtocolEndpoint, protocol: CommunityProtocol): Promise<GeneratedTool> {
+  private async generateTool(
+    endpoint: ProtocolEndpoint,
+    protocol: CommunityProtocol
+  ): Promise<GeneratedTool> {
     const toolSchema = this.generateToolSchema(endpoint, protocol);
     const handler = this.createToolHandler(endpoint, protocol);
 
@@ -68,17 +71,20 @@ export class ToolGenerator extends EventEmitter {
       metadata: {
         protocol: protocol.name,
         version: protocol.version,
-        endpoint: endpoint.name
-      }
+        endpoint: endpoint.name,
+      },
     };
   }
 
-  private generateToolSchema(endpoint: ProtocolEndpoint, protocol: CommunityProtocol): MCPToolSchema {
+  private generateToolSchema(
+    endpoint: ProtocolEndpoint,
+    protocol: CommunityProtocol
+  ): MCPToolSchema {
     const schema = this.schemaGenerator.generateSchema(protocol);
-    const toolSchema = schema.tools.find((tool: MCPToolSchema) => 
+    const toolSchema = schema.tools.find((tool: MCPToolSchema) =>
       tool.name.endsWith(this.toCamelCase(endpoint.name))
     );
-    
+
     if (!toolSchema) {
       throw new Error(`Failed to generate schema for endpoint: ${endpoint.name}`);
     }
@@ -86,7 +92,7 @@ export class ToolGenerator extends EventEmitter {
     return toolSchema;
   }
 
-  private createToolHandler(endpoint: ProtocolEndpoint, protocol: CommunityProtocol): Function {
+  private createToolHandler(endpoint: ProtocolEndpoint, protocol: CommunityProtocol): (...args: any[]) => Promise<any> {
     return async (params: Record<string, any> = {}) => {
       try {
         logger.debug(`Executing tool for ${protocol.name}.${endpoint.name}`, { params });
@@ -113,12 +119,12 @@ export class ToolGenerator extends EventEmitter {
             maxDelay: 10000,
             backoffMultiplier: 2,
             retryableErrors: ['ENOTFOUND', 'ECONNRESET', 'ETIMEDOUT'],
-            retryableStatusCodes: [408, 429, 500, 502, 503, 504]
+            retryableStatusCodes: [408, 429, 500, 502, 503, 504],
           },
           rateLimit: {
             requestsPerMinute: 100,
-            burstLimit: 10
-          }
+            burstLimit: 10,
+          },
         });
 
         // Execute the request
@@ -126,10 +132,10 @@ export class ToolGenerator extends EventEmitter {
 
         // Process and return response
         const result = await this.processResponse(response);
-        
+
         logger.debug(`Tool execution successful for ${protocol.name}.${endpoint.name}`, {
           statusCode: response.status,
-          responseSize: JSON.stringify(result).length
+          responseSize: JSON.stringify(result).length,
         });
 
         return result;
@@ -140,7 +146,10 @@ export class ToolGenerator extends EventEmitter {
     };
   }
 
-  private extractAuthHeaders(params: Record<string, any>, authConfig?: AuthenticationConfig): Record<string, string> {
+  private extractAuthHeaders(
+    params: Record<string, any>,
+    authConfig?: AuthenticationConfig
+  ): Record<string, string> {
     const headers: Record<string, string> = {};
 
     if (!authConfig) {
@@ -152,7 +161,7 @@ export class ToolGenerator extends EventEmitter {
         if (params.apiKey) {
           const headerName = authConfig.name || 'X-API-Key';
           const location = authConfig.location || 'header';
-          
+
           if (location === 'header') {
             headers[headerName] = params.apiKey;
           }
@@ -196,9 +205,9 @@ export class ToolGenerator extends EventEmitter {
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'HyperMCP-Community-Client/1.0',
-        ...authHeaders
+        ...authHeaders,
       },
-      timeout
+      timeout,
     };
 
     // Handle request body for POST/PUT/PATCH methods
@@ -234,12 +243,20 @@ export class ToolGenerator extends EventEmitter {
     return url;
   }
 
-  private extractBodyParameters(params: Record<string, any>, endpoint: ProtocolEndpoint): Record<string, any> {
+  private extractBodyParameters(
+    params: Record<string, any>,
+    endpoint: ProtocolEndpoint
+  ): Record<string, any> {
     const bodyParams: Record<string, any> = {};
     const pathParamNames = this.extractPathParameterNames(endpoint.path);
     const excludedParams = new Set([
-      'timeout', 'retries', 'apiKey', 'bearerToken', 'basicAuth', 'accessToken',
-      ...pathParamNames
+      'timeout',
+      'retries',
+      'apiKey',
+      'bearerToken',
+      'basicAuth',
+      'accessToken',
+      ...pathParamNames,
     ]);
 
     Object.entries(params).forEach(([key, value]) => {
@@ -251,12 +268,20 @@ export class ToolGenerator extends EventEmitter {
     return bodyParams;
   }
 
-  private extractQueryParameters(params: Record<string, any>, endpoint: ProtocolEndpoint): Record<string, any> {
+  private extractQueryParameters(
+    params: Record<string, any>,
+    endpoint: ProtocolEndpoint
+  ): Record<string, any> {
     const queryParams: Record<string, any> = {};
     const pathParamNames = this.extractPathParameterNames(endpoint.path);
     const excludedParams = new Set([
-      'timeout', 'retries', 'apiKey', 'bearerToken', 'basicAuth', 'accessToken',
-      ...pathParamNames
+      'timeout',
+      'retries',
+      'apiKey',
+      'bearerToken',
+      'basicAuth',
+      'accessToken',
+      ...pathParamNames,
     ]);
 
     Object.entries(params).forEach(([key, value]) => {
@@ -270,7 +295,7 @@ export class ToolGenerator extends EventEmitter {
 
   private extractPathParameterNames(path: string): string[] {
     const matches = path.match(/\{([^}]+)\}/g);
-    return matches ? matches.map(match => match.slice(1, -1)) : [];
+    return matches ? matches.map((match) => match.slice(1, -1)) : [];
   }
 
   private async executeRequest(client: ApiClient, config: any): Promise<any> {
@@ -301,11 +326,15 @@ export class ToolGenerator extends EventEmitter {
     return {
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers
+      headers: response.headers,
     };
   }
 
-  private createToolError(error: unknown, protocol: CommunityProtocol, endpoint: ProtocolEndpoint): Error {
+  private createToolError(
+    error: unknown,
+    protocol: CommunityProtocol,
+    endpoint: ProtocolEndpoint
+  ): Error {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const toolError = new Error(
       `Tool execution failed for ${protocol.name}.${endpoint.name}: ${errorMessage}`
@@ -321,13 +350,15 @@ export class ToolGenerator extends EventEmitter {
   }
 
   private toCamelCase(str: string): string {
-    return str
-      // Split by word boundaries, dashes, underscores
-      .replace(/[-_\s]+(.)?/g, (_, char) => char ? char.toUpperCase() : '')
-      // Handle version numbers like "v2" -> "V2"
-      .replace(/v(\d+)/g, 'V$1')
-      // First character lowercase
-      .replace(/^./, char => char.toLowerCase());
+    return (
+      str
+        // Split by word boundaries, dashes, underscores
+        .replace(/[-_\s]+(.)?/g, (_, char) => (char ? char.toUpperCase() : ''))
+        // Handle version numbers like "v2" -> "V2"
+        .replace(/v(\d+)/g, 'V$1')
+        // First character lowercase
+        .replace(/^./, (char) => char.toLowerCase())
+    );
   }
 
   async validateGeneratedTools(tools: GeneratedTool[]): Promise<{
@@ -340,7 +371,7 @@ export class ToolGenerator extends EventEmitter {
 
     // Check for duplicate tool names
     const toolNames = new Set<string>();
-    tools.forEach(tool => {
+    tools.forEach((tool) => {
       if (toolNames.has(tool.name)) {
         errors.push(`Duplicate tool name: ${tool.name}`);
       }
@@ -348,7 +379,7 @@ export class ToolGenerator extends EventEmitter {
     });
 
     // Validate each tool
-    tools.forEach(tool => {
+    tools.forEach((tool) => {
       // Check tool name format
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tool.name)) {
         errors.push(`Invalid tool name format: ${tool.name}`);
@@ -381,7 +412,7 @@ export class ToolGenerator extends EventEmitter {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -394,7 +425,7 @@ export class ToolGenerator extends EventEmitter {
     return {
       toolsGenerated: 0,
       protocolsProcessed: 0,
-      averageToolsPerProtocol: 0
+      averageToolsPerProtocol: 0,
     };
   }
 }

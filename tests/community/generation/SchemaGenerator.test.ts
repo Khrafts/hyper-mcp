@@ -17,11 +17,11 @@ describe('SchemaGenerator', () => {
     authentication: {
       type: 'api_key',
       location: 'header',
-      name: 'X-API-Key'
+      name: 'X-API-Key',
     },
     rateLimit: {
       requests: 1000,
-      window: '1h'
+      window: '1h',
     },
     endpoints: [
       {
@@ -37,25 +37,25 @@ describe('SchemaGenerator', () => {
             required: false,
             default: 100,
             minimum: 1,
-            maximum: 1000
+            maximum: 1000,
           },
           {
             name: 'category',
             type: 'string',
             description: 'Filter by category',
             required: true,
-            enum: ['news', 'sports', 'tech']
-          }
+            enum: ['news', 'sports', 'tech'],
+          },
         ],
         response: {
           type: 'object',
-          description: 'API response containing data'
+          description: 'API response containing data',
         },
         authentication: true,
         rateLimit: {
           requests: 100,
-          window: '1m'
-        }
+          window: '1m',
+        },
       },
       {
         name: 'createItem',
@@ -68,7 +68,7 @@ describe('SchemaGenerator', () => {
             type: 'string',
             description: 'Item title',
             required: true,
-            pattern: '^[a-zA-Z0-9\\s]+$'
+            pattern: '^[a-zA-Z0-9\\s]+$',
           },
           {
             name: 'metadata',
@@ -83,19 +83,19 @@ describe('SchemaGenerator', () => {
                 items: {
                   type: 'string',
                   description: 'Individual tag',
-                  required: true
-                }
-              }
-            }
-          }
+                  required: true,
+                },
+              },
+            },
+          },
         ],
         response: {
           type: 'object',
-          description: 'Created item response'
+          description: 'Created item response',
         },
-        authentication: true
-      }
-    ]
+        authentication: true,
+      },
+    ],
   };
 
   describe('Schema Generation', () => {
@@ -109,7 +109,7 @@ describe('SchemaGenerator', () => {
         protocol: 'test-api',
         version: '1.0.0',
         generatedAt: expect.any(Date),
-        endpoints: 2
+        endpoints: 2,
       });
     });
 
@@ -131,7 +131,7 @@ describe('SchemaGenerator', () => {
 
     it('should convert parameters to JSON schema format', () => {
       const schema = generator.generateSchema(sampleProtocol);
-      const getDataTool = schema.tools.find(tool => tool.name === 'testApi_getData');
+      const getDataTool = schema.tools.find((tool) => tool.name === 'testApi_getData');
 
       expect(getDataTool?.parameters.properties).toHaveProperty('limit');
       expect(getDataTool?.parameters.properties.limit).toEqual({
@@ -139,14 +139,14 @@ describe('SchemaGenerator', () => {
         description: 'Maximum number of items to return',
         default: 100,
         minimum: 1,
-        maximum: 1000
+        maximum: 1000,
       });
 
       expect(getDataTool?.parameters.properties).toHaveProperty('category');
       expect(getDataTool?.parameters.properties.category).toEqual({
         type: 'string',
         description: 'Filter by category',
-        enum: ['news', 'sports', 'tech']
+        enum: ['news', 'sports', 'tech'],
       });
 
       expect(getDataTool?.parameters.required).toContain('category');
@@ -155,7 +155,7 @@ describe('SchemaGenerator', () => {
 
     it('should handle complex object parameters', () => {
       const schema = generator.generateSchema(sampleProtocol);
-      const createItemTool = schema.tools.find(tool => tool.name === 'testApi_createItem');
+      const createItemTool = schema.tools.find((tool) => tool.name === 'testApi_createItem');
 
       expect(createItemTool?.parameters.properties).toHaveProperty('metadata');
       expect(createItemTool?.parameters.properties.metadata).toEqual({
@@ -167,22 +167,22 @@ describe('SchemaGenerator', () => {
             description: 'Array of tags',
             items: {
               type: 'string',
-              description: 'Individual tag'
-            }
-          }
-        }
+              description: 'Individual tag',
+            },
+          },
+        },
       });
     });
 
     it('should add authentication parameters when required', () => {
       const schema = generator.generateSchema(sampleProtocol);
-      const getDataTool = schema.tools.find(tool => tool.name === 'testApi_getData');
+      const getDataTool = schema.tools.find((tool) => tool.name === 'testApi_getData');
 
       expect(getDataTool?.parameters.properties).toHaveProperty('apiKey');
       expect(getDataTool?.parameters.properties.apiKey).toEqual({
         type: 'string',
         description: 'API key for authentication',
-        minLength: 1
+        minLength: 1,
       });
 
       expect(getDataTool?.parameters.required).toContain('apiKey');
@@ -198,7 +198,7 @@ describe('SchemaGenerator', () => {
           description: 'Request timeout in milliseconds',
           minimum: 1000,
           maximum: 60000,
-          default: 10000
+          default: 10000,
         });
 
         expect(tool.parameters.properties).toHaveProperty('retries');
@@ -207,7 +207,7 @@ describe('SchemaGenerator', () => {
           description: 'Number of retry attempts on failure',
           minimum: 0,
           maximum: 5,
-          default: 2
+          default: 2,
         });
       });
     });
@@ -218,8 +218,8 @@ describe('SchemaGenerator', () => {
       const protocolWithBearer: CommunityProtocol = {
         ...sampleProtocol,
         authentication: {
-          type: 'bearer_token'
-        }
+          type: 'bearer_token',
+        },
       };
 
       const schema = generator.generateSchema(protocolWithBearer);
@@ -229,7 +229,7 @@ describe('SchemaGenerator', () => {
       expect(tool?.parameters.properties?.bearerToken).toEqual({
         type: 'string',
         description: 'Bearer token for authentication',
-        minLength: 1
+        minLength: 1,
       });
     });
 
@@ -237,8 +237,8 @@ describe('SchemaGenerator', () => {
       const protocolWithBasic: CommunityProtocol = {
         ...sampleProtocol,
         authentication: {
-          type: 'basic'
-        }
+          type: 'basic',
+        },
       };
 
       const schema = generator.generateSchema(protocolWithBasic);
@@ -251,14 +251,14 @@ describe('SchemaGenerator', () => {
         properties: {
           username: {
             type: 'string',
-            description: 'Username for basic authentication'
+            description: 'Username for basic authentication',
           },
           password: {
             type: 'string',
-            description: 'Password for basic authentication'
-          }
+            description: 'Password for basic authentication',
+          },
         },
-        required: ['username', 'password']
+        required: ['username', 'password'],
       });
     });
 
@@ -266,8 +266,8 @@ describe('SchemaGenerator', () => {
       const protocolWithOAuth: CommunityProtocol = {
         ...sampleProtocol,
         authentication: {
-          type: 'oauth2'
-        }
+          type: 'oauth2',
+        },
       };
 
       const schema = generator.generateSchema(protocolWithOAuth);
@@ -277,7 +277,7 @@ describe('SchemaGenerator', () => {
       expect(tool?.parameters.properties?.accessToken).toEqual({
         type: 'string',
         description: 'OAuth2 access token',
-        minLength: 1
+        minLength: 1,
       });
     });
   });
@@ -306,10 +306,10 @@ describe('SchemaGenerator', () => {
             description: 'Health check endpoint',
             response: {
               type: 'object',
-              description: 'Health status'
-            }
-          }
-        ]
+              description: 'Health status',
+            },
+          },
+        ],
       };
 
       const schema = generator.generateSchema(protocolWithNoParams);
@@ -338,9 +338,7 @@ describe('SchemaGenerator', () => {
       const validation = generator.validateGeneratedSchema(schema);
 
       expect(validation.valid).toBe(false);
-      expect(validation.errors).toContainEqual(
-        expect.stringContaining('Duplicate tool name')
-      );
+      expect(validation.errors).toContainEqual(expect.stringContaining('Duplicate tool name'));
     });
 
     it('should detect invalid tool name formats', () => {
@@ -352,9 +350,7 @@ describe('SchemaGenerator', () => {
       const validation = generator.validateGeneratedSchema(schema);
 
       expect(validation.valid).toBe(false);
-      expect(validation.errors).toContainEqual(
-        expect.stringContaining('Invalid tool name format')
-      );
+      expect(validation.errors).toContainEqual(expect.stringContaining('Invalid tool name format'));
     });
 
     it('should warn about long tool names', () => {
@@ -365,9 +361,7 @@ describe('SchemaGenerator', () => {
 
       const validation = generator.validateGeneratedSchema(schema);
 
-      expect(validation.warnings).toContainEqual(
-        expect.stringContaining('Tool name is very long')
-      );
+      expect(validation.warnings).toContainEqual(expect.stringContaining('Tool name is very long'));
     });
 
     it('should warn about short descriptions', () => {
@@ -394,7 +388,7 @@ describe('SchemaGenerator', () => {
 
       expect(validation.valid).toBe(false);
       expect(validation.errors).toContainEqual(
-        expect.stringContaining('Required parameter \'nonExistentParam\' not found')
+        expect.stringContaining("Required parameter 'nonExistentParam' not found")
       );
     });
 
@@ -408,7 +402,7 @@ describe('SchemaGenerator', () => {
 
       expect(validation.valid).toBe(false);
       expect(validation.errors).toContainEqual(
-        expect.stringContaining('Parameter \'limit\' missing type')
+        expect.stringContaining("Parameter 'limit' missing type")
       );
     });
 
@@ -421,7 +415,7 @@ describe('SchemaGenerator', () => {
       const validation = generator.validateGeneratedSchema(schema);
 
       expect(validation.warnings).toContainEqual(
-        expect.stringContaining('Parameter \'limit\' missing description')
+        expect.stringContaining("Parameter 'limit' missing description")
       );
     });
   });
@@ -434,7 +428,7 @@ describe('SchemaGenerator', () => {
         description: 'An empty protocol',
         author: 'Test Author',
         license: 'MIT',
-        endpoints: []
+        endpoints: [],
       };
 
       expect(() => generator.generateSchema(emptyProtocol)).not.toThrow();
@@ -446,8 +440,8 @@ describe('SchemaGenerator', () => {
         authentication: undefined,
         endpoints: sampleProtocol.endpoints.map((endpoint: any) => ({
           ...endpoint,
-          authentication: false
-        }))
+          authentication: false,
+        })),
       };
 
       const schema = generator.generateSchema(protocolWithoutAuth);
@@ -463,7 +457,7 @@ describe('SchemaGenerator', () => {
     it('should handle protocols with special characters in names', () => {
       const protocolWithSpecialChars: CommunityProtocol = {
         ...sampleProtocol,
-        name: 'test-api_v2'
+        name: 'test-api_v2',
       };
 
       const schema = generator.generateSchema(protocolWithSpecialChars);
@@ -483,7 +477,7 @@ describe('SchemaGenerator', () => {
     it('should provide meaningful error messages', () => {
       const protocolWithInvalidEndpoint: CommunityProtocol = {
         ...sampleProtocol,
-        endpoints: [null as any]
+        endpoints: [null as any],
       };
 
       expect(() => generator.generateSchema(protocolWithInvalidEndpoint)).toThrow();

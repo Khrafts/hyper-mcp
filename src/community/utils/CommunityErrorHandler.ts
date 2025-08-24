@@ -1,11 +1,11 @@
 import { ErrorHandler } from '../../errors/ErrorHandler.js';
-import { 
-  ErrorCode, 
-  ErrorCategory, 
+import {
+  ErrorCode,
+  ErrorCategory,
   ErrorContext,
   ValidationError,
   SystemError,
-  NetworkError 
+  NetworkError,
 } from '../../errors/ErrorTypes.js';
 import { createComponentLogger } from '../../utils/logger.js';
 import { CommunityErrorContext } from '../types/index.js';
@@ -20,10 +20,7 @@ export class CommunityErrorHandler {
   }
 
   // Protocol validation errors
-  createProtocolValidationError(
-    message: string,
-    context: CommunityErrorContext
-  ): ValidationError {
+  createProtocolValidationError(message: string, context: CommunityErrorContext): ValidationError {
     const errorContext: ErrorContext = {
       component: 'CommunityManager',
       operation: 'validateProtocol',
@@ -31,8 +28,8 @@ export class CommunityErrorHandler {
       metadata: {
         protocolName: context.protocolName,
         protocolVersion: context.protocolVersion,
-        validationErrors: context.validationErrors
-      }
+        validationErrors: context.validationErrors,
+      },
     };
 
     return new ValidationError(
@@ -56,8 +53,8 @@ export class CommunityErrorHandler {
       timestamp: Date.now(),
       metadata: {
         protocolName: context.protocolName,
-        protocolVersion: context.protocolVersion
-      }
+        protocolVersion: context.protocolVersion,
+      },
     };
 
     return new SystemError(
@@ -75,7 +72,7 @@ export class CommunityErrorHandler {
       component: 'CommunityManager',
       operation: 'getProtocol',
       timestamp: Date.now(),
-      metadata: { protocolName }
+      metadata: { protocolName },
     };
 
     return new SystemError(
@@ -100,8 +97,8 @@ export class CommunityErrorHandler {
       metadata: {
         toolName: context.toolName,
         protocolName: context.protocolName,
-        endpoint: context.endpoint
-      }
+        endpoint: context.endpoint,
+      },
     };
 
     return new SystemError(
@@ -114,11 +111,7 @@ export class CommunityErrorHandler {
   }
 
   // GitHub integration errors
-  createGitHubError(
-    message: string,
-    context: CommunityErrorContext,
-    cause?: Error
-  ): NetworkError {
+  createGitHubError(message: string, context: CommunityErrorContext, cause?: Error): NetworkError {
     const errorContext: ErrorContext = {
       component: 'GitHubIntegration',
       operation: 'processSubmission',
@@ -126,8 +119,8 @@ export class CommunityErrorHandler {
       metadata: {
         pullRequestNumber: context.pullRequestNumber,
         author: context.author,
-        submissionId: context.submissionId
-      }
+        submissionId: context.submissionId,
+      },
     };
 
     return new NetworkError(
@@ -152,8 +145,8 @@ export class CommunityErrorHandler {
       metadata: {
         pullRequestNumber: context.pullRequestNumber,
         author: context.author,
-        protocolName: context.protocolName
-      }
+        protocolName: context.protocolName,
+      },
     };
 
     return new SystemError(
@@ -166,16 +159,12 @@ export class CommunityErrorHandler {
   }
 
   // Schema generation errors
-  createSchemaGenerationError(
-    message: string,
-    protocolName: string,
-    cause?: Error
-  ): SystemError {
+  createSchemaGenerationError(message: string, protocolName: string, cause?: Error): SystemError {
     const errorContext: ErrorContext = {
       component: 'SchemaGenerator',
       operation: 'generateSchema',
       timestamp: Date.now(),
-      metadata: { protocolName }
+      metadata: { protocolName },
     };
 
     return new SystemError(
@@ -193,7 +182,7 @@ export class CommunityErrorHandler {
       component: 'CommunityManager',
       operation: 'initialize',
       timestamp: Date.now(),
-      metadata: {}
+      metadata: {},
     };
 
     return new SystemError(
@@ -206,15 +195,12 @@ export class CommunityErrorHandler {
   }
 
   // Handle any community-related error
-  handleCommunityError(
-    error: unknown,
-    context?: CommunityErrorContext
-  ): SystemError {
+  handleCommunityError(error: unknown, context?: CommunityErrorContext): SystemError {
     const enrichedContext: ErrorContext = {
       component: 'CommunitySystem',
       operation: 'unknown',
       timestamp: Date.now(),
-      metadata: context
+      metadata: context,
     };
 
     return this.errorHandler.handleError(error, enrichedContext) as SystemError;
@@ -230,7 +216,7 @@ export class CommunityErrorHandler {
       component: 'CommunitySystem',
       operation: operationName,
       timestamp: Date.now(),
-      metadata: context
+      metadata: context,
     };
 
     return this.errorHandler.executeWithRecovery(operation, enrichedContext);
@@ -243,9 +229,7 @@ export class CommunityErrorHandler {
       communityErrors: allMetrics.errorsByCategory[ErrorCategory.COMMUNITY] || 0,
       totalErrors: allMetrics.totalErrors,
       retrySuccessRate:
-        allMetrics.retryAttempts > 0
-          ? allMetrics.successfulRetries / allMetrics.retryAttempts
-          : 1,
+        allMetrics.retryAttempts > 0 ? allMetrics.successfulRetries / allMetrics.retryAttempts : 1,
     };
   }
 
@@ -254,14 +238,7 @@ export class CommunityErrorHandler {
     logger.error('Community system error', {
       error: error.message,
       stack: error.stack,
-      ...context
-    });
-    
-    // Also handle through main error handler for centralized tracking
-    this.errorHandler.handleError(error, {
-      component: 'CommunitySystem',
-      timestamp: Date.now(),
-      metadata: context
+      ...context,
     });
   }
 }
