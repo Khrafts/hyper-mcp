@@ -283,8 +283,10 @@ describe('SimpleHyperLiquidTools', () => {
     describe('hyperliquid_health_check', () => {
       const mockHealth = {
         healthy: true,
-        lastChecked: Date.now(),
+        latencyMs: 150,
         details: { latency: 150 },
+        errors: [],
+        lastChecked: Date.now(),
       };
 
       beforeEach(() => {
@@ -294,7 +296,7 @@ describe('SimpleHyperLiquidTools', () => {
       it('should perform health check successfully', async () => {
         const result = await tools.handleToolCall('hyperliquid_health_check', {});
 
-        expect(mockAdapter.healthCheck).toHaveBeenCalled();
+        expect(mockAdapter.healthCheck).toHaveBeenCalledWith(true);
         expect(result.isError).toBeUndefined();
 
         const content = JSON.parse((result as any).content[0].text);
@@ -409,13 +411,10 @@ describe('SimpleHyperLiquidTools', () => {
       it('should cancel order successfully', async () => {
         const result = await tools.handleToolCall('hyperliquid_cancel_order', {
           assetId: 0,
-          oid: 123456,
+          orderId: 123456,
         });
 
-        expect(mockAdapter.cancelOrder).toHaveBeenCalledWith({
-          assetId: 0,
-          oid: 123456,
-        });
+        expect(mockAdapter.cancelOrder).toHaveBeenCalledWith(0, 123456);
         expect(result.isError).toBeUndefined();
 
         const content = JSON.parse((result as any).content[0].text);
@@ -442,8 +441,8 @@ describe('SimpleHyperLiquidTools', () => {
         expect(result.isError).toBeUndefined();
 
         const content = JSON.parse((result as any).content[0].text);
-        expect(content.openOrders).toHaveLength(2);
-        expect(content.openOrders[0].coin).toBe('BTC');
+        expect(content.orders).toHaveLength(2);
+        expect(content.orders[0].coin).toBe('BTC');
       });
     });
 
@@ -475,7 +474,7 @@ describe('SimpleHyperLiquidTools', () => {
       const mockWsStatus = { connected: true, subscriptions: ['allMids'], lastMessage: Date.now() };
 
       beforeEach(() => {
-        mockAdapter.getWebSocketStatus.mockResolvedValue(mockWsStatus);
+        mockAdapter.getWebSocketStatus.mockReturnValue(mockWsStatus);
       });
 
       it('should get websocket status successfully', async () => {

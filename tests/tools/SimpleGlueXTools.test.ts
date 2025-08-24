@@ -22,9 +22,11 @@ describe('SimpleGlueXTools', () => {
       getTokens: jest.fn(),
       getTokenInfo: jest.fn(),
       getQuote: jest.fn(),
+      validateRouteRequest: jest.fn(),
       getBestRoute: jest.fn(),
       createTransaction: jest.fn(),
       getTransactionStatus: jest.fn(),
+      trackBridge: jest.fn(),
       getLiquidityPools: jest.fn(),
       getTokenPrice: jest.fn(),
       getTokenMetrics: jest.fn(),
@@ -191,9 +193,8 @@ describe('SimpleGlueXTools', () => {
           limit: 150, // exceeds maximum
         });
 
-        expect(result.isError).toBeUndefined();
-        const content = JSON.parse((result.content[0] as any).text);
-        expect(content.error).toBeDefined();
+        expect(result.isError).toBe(true);
+        expect((result.content[0] as any).text).toContain('Error:');
       });
     });
 
@@ -219,15 +220,17 @@ describe('SimpleGlueXTools', () => {
         });
 
         expect(mockAdapter.getTokenInfo).toHaveBeenCalledWith(
-          '0xa0b86991c431e47f0d7a3dc0f27f49c5ff6b5b8e2',
-          1
+          1, // chainId first
+          '0xa0b86991c431e47f0d7a3dc0f27f49c5ff6b5b8e2' // tokenAddress second
         );
         expect(result.isError).toBeUndefined();
 
         const content = JSON.parse((result.content[0] as any).text);
-        expect(content.action).toBe('get_token_info');
-        expect(content.token.symbol).toBe('USDC');
-        expect(content.token.tags).toContain('stablecoin');
+        expect(content.chainId).toBe(1);
+        expect(content.tokenAddress).toBe('0xa0b86991c431e47f0d7a3dc0f27f49c5ff6b5b8e2');
+        expect(content.tokenInfo.symbol).toBe('USDC');
+        expect(content.tokenInfo.tags).toContain('stablecoin');
+        expect(content.found).toBe(true);
       });
 
       it('should handle missing required parameters', async () => {
@@ -235,9 +238,8 @@ describe('SimpleGlueXTools', () => {
           chainId: 1, // missing tokenAddress
         });
 
-        expect(result.isError).toBeUndefined();
-        const content = JSON.parse((result.content[0] as any).text);
-        expect(content.error).toBeDefined();
+        expect(result.isError).toBe(true);
+        expect((result.content[0] as any).text).toContain('Error:');
       });
     });
 
@@ -313,6 +315,7 @@ describe('SimpleGlueXTools', () => {
       };
 
       beforeEach(() => {
+        mockAdapter.validateRouteRequest.mockResolvedValue({ valid: true, errors: [] });
         mockAdapter.getQuote.mockResolvedValue(mockQuote);
       });
 
@@ -322,16 +325,19 @@ describe('SimpleGlueXTools', () => {
           toTokenAddress: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
           amount: '1000000',
           fromChainId: 1,
+          toChainId: 1,
         });
 
         expect(mockAdapter.getQuote).toHaveBeenCalled();
         expect(result.isError).toBeUndefined();
 
         const content = JSON.parse((result.content[0] as any).text);
-        expect(content.action).toBe('get_swap_quote');
+        expect(content.hasQuote).toBe(true);
         expect(content.quote.bestRoute.fromToken.symbol).toBe('USDC');
         expect(content.quote.bestRoute.toToken.symbol).toBe('UNI');
         expect(content.quote.routes).toHaveLength(1);
+        expect(content.request.fromChainId).toBe(1);
+        expect(content.request.toChainId).toBe(1);
       });
 
       it('should include optional parameters', async () => {
@@ -431,15 +437,21 @@ describe('SimpleGlueXTools', () => {
           toTokenAddress: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
           amount: '1000000',
           fromChainId: 1,
+          toChainId: 1,
+          slippage: 0.5,
+          userAddress: '0x742d35Cc3b4aED7F4F2d2b5fD0C5db18a16F2d8e',
         });
 
         expect(mockAdapter.getBestRoute).toHaveBeenCalled();
         expect(result.isError).toBeUndefined();
 
         const content = JSON.parse((result.content[0] as any).text);
-        expect(content.action).toBe('get_best_route');
-        expect(content.route.routes).toHaveLength(1);
-        expect(content.route.bestRoute.fromToken.symbol).toBe('USDC');
+        expect(content.bestRoute).toBeDefined();
+        expect(content.bestRoute.fromToken.symbol).toBe('USDC');
+        expect(content.bestRoute.toToken.symbol).toBe('UNI');
+        expect(content.estimatedTime).toBe(30);
+        expect(content.request.fromChainId).toBe(1);
+        expect(content.request.toChainId).toBe(1);
       });
     });
 
@@ -463,21 +475,19 @@ describe('SimpleGlueXTools', () => {
 
       it('should create transaction successfully', async () => {
         const result = await tools.handleToolCall('gluex_create_transaction', {
-          route: {
-            fromToken: '0xa0b86991c431e47f0d7a3dc0f27f49c5ff6b5b8e2',
-            toToken: '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
-            amount: '1000000',
-          },
+          routeId: 'route_123',
           userAddress: '0x742d35Cc3b4aED7F4F2d2b5fD0C5db18a16F2d8e',
+          slippage: 0.5,
         });
 
         expect(mockAdapter.createTransaction).toHaveBeenCalled();
         expect(result.isError).toBeUndefined();
 
         const content = JSON.parse((result.content[0] as any).text);
-        expect(content.action).toBe('create_transaction');
+        expect(content.routeId).toBe('route_123');
+        expect(content.hasTransaction).toBe(true);
+        expect(content.estimatedProcessingTime).toBe(30);
         expect(content.transaction.routeId).toBe('route_123');
-        expect(content.transaction.estimatedProcessingTime).toBe(30);
       });
     });
 
@@ -507,7 +517,7 @@ describe('SimpleGlueXTools', () => {
       };
 
       beforeEach(() => {
-        mockAdapter.getTransactionStatus.mockResolvedValue(mockStatus);
+        mockAdapter.trackBridge.mockResolvedValue(mockStatus);
       });
 
       it('should track transaction successfully', async () => {
@@ -516,13 +526,16 @@ describe('SimpleGlueXTools', () => {
           chainId: 1,
         });
 
-        expect(mockAdapter.getTransactionStatus).toHaveBeenCalledWith('0x123456789abcdef...', 1);
+        expect(mockAdapter.trackBridge).toHaveBeenCalledWith('0x123456789abcdef...', 1);
         expect(result.isError).toBeUndefined();
 
         const content = JSON.parse((result.content[0] as any).text);
-        expect(content.action).toBe('track_transaction');
-        expect(content.status.status).toBe('success');
-        expect(content.status.confirmations).toBe(12);
+        expect(content.txHash).toBe('0x123456789abcdef...');
+        expect(content.chainId).toBe(1);
+        expect(content.bridgeStatus).toBeDefined();
+        expect(content.bridgeStatus.bridgeStatus).toBe('completed');
+        expect(content.bridgeStatus.progress).toBe(100);
+        expect(content.progress).toBe(100);
       });
     });
 
@@ -547,15 +560,16 @@ describe('SimpleGlueXTools', () => {
         });
 
         expect(mockAdapter.getTokenPrice).toHaveBeenCalledWith(
-          '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
-          1
+          1, // chainId first
+          '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984' // tokenAddress second
         );
         expect(result.isError).toBeUndefined();
 
         const content = JSON.parse((result.content[0] as any).text);
-        expect(content.action).toBe('get_token_price');
-        expect(content.price.symbol).toBe('UNI');
-        expect(content.price.price).toBe(7.42);
+        expect(content.chainId).toBe(1);
+        expect(content.tokenAddress).toBe('0x1f9840a85d5af5bf1d1762f925bdaddc4201f984');
+        expect(content.priceData.price).toBe(7.42);
+        expect(content.priceData.priceChange24h).toBe(0.12);
       });
     });
 
@@ -586,9 +600,10 @@ describe('SimpleGlueXTools', () => {
         expect(result.isError).toBeUndefined();
 
         const content = JSON.parse((result.content[0] as any).text);
-        expect(content.action).toBe('health_check');
-        expect(content.health.healthy).toBe(true);
-        expect(content.health.details.chainStatuses).toHaveLength(2);
+        expect(content.healthy).toBe(true);
+        expect(content.latencyMs).toBe(120);
+        expect(content.details.chainStatuses).toHaveLength(2);
+        expect(content.errors).toEqual([]);
       });
     });
   });
@@ -597,10 +612,8 @@ describe('SimpleGlueXTools', () => {
     it('should handle unknown tool names', async () => {
       const result = await tools.handleToolCall('unknown_tool', {});
 
-      expect(result.isError).toBeUndefined();
-      const content = JSON.parse((result.content[0] as any).text);
-      expect(content.error).toBeDefined();
-      expect(content.error).toContain('Unknown GlueX tool');
+      expect(result.isError).toBe(true);
+      expect((result.content[0] as any).text).toContain('Unknown GlueX tool');
     });
 
     it('should handle adapter errors gracefully', async () => {
@@ -609,17 +622,15 @@ describe('SimpleGlueXTools', () => {
 
       const result = await tools.handleToolCall('gluex_get_supported_chains', {});
 
-      expect(result.isError).toBeUndefined();
-      const content = JSON.parse((result.content[0] as any).text);
-      expect(content.error).toBeDefined();
+      expect(result.isError).toBe(true);
+      expect((result.content[0] as any).text).toContain('Error:');
     });
 
     it('should handle invalid arguments gracefully', async () => {
       const result = await tools.handleToolCall('gluex_get_tokens', null);
 
-      expect(result.isError).toBeUndefined();
-      const content = JSON.parse((result.content[0] as any).text);
-      expect(content.error).toBeDefined();
+      expect(result.isError).toBe(true);
+      expect((result.content[0] as any).text).toContain('Error:');
     });
   });
 });
