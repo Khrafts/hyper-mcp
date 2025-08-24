@@ -9,6 +9,8 @@ import { getConfig } from '../config/index.js';
 import { SessionManager, ISessionManager } from './SessionManager.js';
 import { ToolRegistry, IToolRegistry, MCPTool } from './ToolRegistry.js';
 import { SimpleAdapterManager } from './SimpleAdapterManager.js';
+import { CommunityManager } from '../community/CommunityManager.js';
+import { CommunitySystemConfig, LoadedProtocol } from '../community/types/index.js';
 
 const logger = createComponentLogger('MCP_SERVER');
 const config = getConfig();
@@ -42,6 +44,9 @@ export interface IMCPServer {
   handleRequest(request: MCPRequest): Promise<MCPResponse>;
   broadcastNotification(notification: MCPNotification): void;
   getHealthStatus(): Promise<{ healthy: boolean; details: Record<string, unknown> }>;
+  initializeCommunitySystem(config: CommunitySystemConfig): Promise<void>;
+  loadCommunityProtocol(protocolName: string): Promise<void>;
+  unloadCommunityProtocol(protocolName: string): Promise<void>;
 }
 
 export class MCPServer implements IMCPServer {
@@ -49,8 +54,10 @@ export class MCPServer implements IMCPServer {
   private _sessionManager: ISessionManager;
   private _toolRegistry: IToolRegistry;
   private _adapterManager: SimpleAdapterManager;
+  private _communityManager?: CommunityManager;
   private isRunning: boolean = false;
   private startTime: number = 0;
+  private communityToolsMap: Map<string, string[]> = new Map(); // protocol -> tool names
 
   constructor() {
     this.server = new Server(
@@ -286,11 +293,20 @@ export class MCPServer implements IMCPServer {
     try {
       const shutdownStart = Date.now();
 
+      // Cleanup community system
+      if (this._communityManager) {
+        await this._communityManager.shutdown();
+        this._communityManager = undefined;
+      }
+
       // Cleanup adapters
       await this._adapterManager.cleanup();
 
       // Cleanup sessions
       await this._sessionManager.cleanup();
+
+      // Clear community tools mapping
+      this.communityToolsMap.clear();
 
       // Close server (no explicit close method in current SDK)
       // The server will clean up automatically
@@ -387,6 +403,11 @@ export class MCPServer implements IMCPServer {
     const sessionHealth = this._sessionManager.getHealthStatus();
     const toolHealth = this._toolRegistry.getHealthStatus();
     const adapterHealth = await this._adapterManager.getHealthStatus();
+    const communityHealth = this._communityManager ? {
+      initialized: true,
+      stats: this._communityManager.getStats(),
+      loaded_protocols: this._communityManager.getLoadedProtocols().length
+    } : { initialized: false };
     const uptime = this.isRunning ? Date.now() - this.startTime : 0;
 
     const healthy =
@@ -400,10 +421,221 @@ export class MCPServer implements IMCPServer {
         sessions: sessionHealth,
         tools: toolHealth.details,
         adapters: adapterHealth,
-        capabilities: ['tools', 'logging', 'prompts'],
+        community: communityHealth,
+        capabilities: ['tools', 'logging', 'prompts', ...(this._communityManager ? ['community'] : [])],
         metadata: this._adapterManager.getAdapterMetadata(),
       },
     };
+  }
+
+  async initializeCommunitySystem(config: CommunitySystemConfig): Promise<void> {
+    try {
+      logger.info('Initializing community system', { config });
+
+      this._communityManager = new CommunityManager(config);
+
+      // Set up event listeners for community events
+      this._communityManager.on('protocol:loaded', (loadedProtocol: LoadedProtocol) => {
+        this.onCommunityProtocolLoaded(loadedProtocol);
+      });
+
+      this._communityManager.on('protocol:unloaded', (protocolName: string) => {
+        this.onCommunityProtocolUnloaded(protocolName);
+      });
+
+      this._communityManager.on('protocol:error', (protocolName: string, error: Error) => {
+        logger.error('Community protocol error', {
+          protocol: protocolName,
+          error: error.message
+        });
+      });
+
+      this._communityManager.on('submission:processed', (submission: any) => {
+        logger.info('Community submission processed', {
+          pr_number: submission.pullRequestNumber,
+          status: submission.status,
+          author: submission.author
+        });
+      });
+
+      logger.info('Community system initialized successfully', {
+        validation_config: config.validation,
+        github_config: { repository: config.github.repository, autoMerge: config.github.autoMerge }
+      });
+    } catch (error) {
+      logger.error('Failed to initialize community system', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  async loadCommunityProtocol(protocolName: string): Promise<void> {
+    if (!this._communityManager) {
+      throw new Error('Community system not initialized');
+    }
+
+    try {
+      logger.info('Loading community protocol', { protocol: protocolName });
+
+      // For demonstration - in real implementation, would load from file/URL
+      // This would typically be called by the community manager automatically
+      // when protocols are submitted via GitHub
+      throw new Error('Direct protocol loading not implemented - protocols are loaded via GitHub submissions');
+    } catch (error) {
+      logger.error('Failed to load community protocol', {
+        protocol: protocolName,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  async unloadCommunityProtocol(protocolName: string): Promise<void> {
+    if (!this._communityManager) {
+      throw new Error('Community system not initialized');
+    }
+
+    try {
+      logger.info('Unloading community protocol', { protocol: protocolName });
+
+      // Unload from community manager
+      await this._communityManager.unloadProtocol(protocolName);
+
+      logger.info('Community protocol unloaded successfully', { protocol: protocolName });
+    } catch (error) {
+      logger.error('Failed to unload community protocol', {
+        protocol: protocolName,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  private onCommunityProtocolLoaded(loadedProtocol: LoadedProtocol): void {
+    try {
+      const protocolName = loadedProtocol.protocol.name;
+      const toolNames: string[] = [];
+
+      logger.info('Registering community protocol tools', {
+        protocol: protocolName,
+        version: loadedProtocol.protocol.version,
+        tool_count: loadedProtocol.tools.length
+      });
+
+      // Register each tool with the MCP server
+      for (const tool of loadedProtocol.tools) {
+        try {
+          const mcpTool: MCPTool = {
+            name: tool.name,
+            description: tool.description,
+            category: 'community',
+            version: loadedProtocol.protocol.version,
+            enabled: true,
+            handler: tool.handler as (params: unknown) => Promise<unknown>,
+            inputSchema: tool.parameters,
+            // metadata removed - not part of MCPTool interface
+          };
+
+          this.registerTool(mcpTool);
+          toolNames.push(tool.name);
+
+          logger.debug('Community tool registered', {
+            tool: tool.name,
+            protocol: protocolName,
+            endpoint: tool.metadata.endpoint
+          });
+        } catch (error) {
+          logger.error('Failed to register community tool', {
+            tool: tool.name,
+            protocol: protocolName,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+
+      // Track tools for this protocol
+      this.communityToolsMap.set(protocolName, toolNames);
+
+      logger.info('Community protocol loaded successfully', {
+        protocol: protocolName,
+        version: loadedProtocol.protocol.version,
+        registered_tools: toolNames.length,
+        total_community_protocols: this.communityToolsMap.size
+      });
+
+      // Broadcast notification about new protocol
+      this.broadcastNotification({
+        method: 'community/protocol_loaded',
+        params: {
+          protocol: protocolName,
+          version: loadedProtocol.protocol.version,
+          tools: toolNames,
+          loaded_at: loadedProtocol.loadedAt
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to process community protocol loading', {
+        protocol: loadedProtocol.protocol.name,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  private onCommunityProtocolUnloaded(protocolName: string): void {
+    try {
+      const toolNames = this.communityToolsMap.get(protocolName);
+      if (!toolNames) {
+        logger.warn('No tools found for unloaded protocol', { protocol: protocolName });
+        return;
+      }
+
+      logger.info('Unregistering community protocol tools', {
+        protocol: protocolName,
+        tool_count: toolNames.length
+      });
+
+      // Unregister tools from the tool registry
+      for (const toolName of toolNames) {
+        try {
+          this._toolRegistry.unregister(toolName);
+          logger.debug('Community tool unregistered', {
+            tool: toolName,
+            protocol: protocolName
+          });
+        } catch (error) {
+          logger.warn('Failed to unregister community tool', {
+            tool: toolName,
+            protocol: protocolName,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      }
+
+      // Remove from tracking
+      this.communityToolsMap.delete(protocolName);
+
+      logger.info('Community protocol unloaded successfully', {
+        protocol: protocolName,
+        unregistered_tools: toolNames.length,
+        remaining_community_protocols: this.communityToolsMap.size
+      });
+
+      // Broadcast notification about protocol removal
+      this.broadcastNotification({
+        method: 'community/protocol_unloaded',
+        params: {
+          protocol: protocolName,
+          tools_removed: toolNames,
+          unloaded_at: new Date()
+        }
+      });
+    } catch (error) {
+      logger.error('Failed to process community protocol unloading', {
+        protocol: protocolName,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   // Register some basic tools for testing
@@ -417,6 +649,41 @@ export class MCPServer implements IMCPServer {
       enabled: true,
       handler: async () => {
         return await this.getHealthStatus();
+      },
+    });
+
+    // Community protocols tool
+    this.registerTool({
+      name: 'list_community_protocols',
+      description: 'List all loaded community protocols',
+      category: 'community',
+      version: '1.0.0',
+      enabled: true,
+      handler: async () => {
+        if (!this._communityManager) {
+          return { error: 'Community system not initialized' };
+        }
+
+        const loadedProtocols = this._communityManager.getLoadedProtocols();
+        const stats = this._communityManager.getStats();
+
+        return {
+          protocols: loadedProtocols.map(protocol => ({
+            name: protocol.protocol.name,
+            version: protocol.protocol.version,
+            description: protocol.protocol.description,
+            author: protocol.protocol.author,
+            status: protocol.status,
+            tools_count: protocol.tools.length,
+            loaded_at: protocol.loadedAt
+          })),
+          stats,
+          total_protocols: loadedProtocols.length,
+          community_tools: Array.from(this.communityToolsMap.entries()).map(([protocol, tools]) => ({
+            protocol,
+            tools
+          }))
+        };
       },
     });
 
@@ -469,7 +736,7 @@ export class MCPServer implements IMCPServer {
     });
 
     logger.info('Default tools registered', {
-      tool_count: 3,
+      tool_count: 4,
     });
   }
 
@@ -480,6 +747,10 @@ export class MCPServer implements IMCPServer {
 
   get toolRegistry(): IToolRegistry {
     return this._toolRegistry;
+  }
+
+  get communityManager(): CommunityManager | undefined {
+    return this._communityManager;
   }
 
   get isServerRunning(): boolean {
