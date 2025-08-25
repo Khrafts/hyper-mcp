@@ -16,11 +16,17 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { getConfig, validateConfig } from '../config/index.js';
+import { getConfig, validateConfig, createCommunitySystemConfig } from '../config/index.js';
 import { SimpleAdapterManager } from '../server/SimpleAdapterManager.js';
 import { ToolRegistry } from '../server/ToolRegistry.js';
+import { CommunityManager } from '../community/CommunityManager.js';
+import { ToolGenerator } from '../community/generation/ToolGenerator.js';
 import { createComponentLogger } from '../utils/logger.js';
 import { zodToJsonSchema } from 'zod-to-json-schema';
+import { readdir } from 'fs/promises';
+import { join } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 const logger = createComponentLogger('MCP_SERVER_CLI');
 
@@ -157,6 +163,59 @@ async function createMCPServer() {
     // Initialize all adapters and tools
     await adapterManager.initialize();
 
+    // Initialize community system if enabled
+    if (config.ENABLE_COMMUNITY_SYSTEM) {
+      console.error('🌐 Initializing community protocol system...');
+
+      const communityConfig = createCommunitySystemConfig(config);
+      const communityManager = new CommunityManager(communityConfig);
+      const toolGenerator = new ToolGenerator();
+
+      // Load protocols from the protocols/ directory
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const protocolsDir = join(__dirname, '../../protocols');
+
+      try {
+        const protocolFiles = await readdir(protocolsDir);
+        const jsonFiles = protocolFiles.filter((file) => file.endsWith('.json'));
+
+        console.error(`📦 Found ${jsonFiles.length} protocol files: ${jsonFiles.join(', ')}`);
+
+        for (const file of jsonFiles) {
+          try {
+            const protocolPath = join(protocolsDir, file);
+            const protocolName = file.replace('.json', '');
+
+            console.error(`⚡ Loading protocol: ${protocolName}`);
+            const loadedProtocol = await communityManager['loader'].loadFromFile(protocolPath);
+
+            // Generate and register tools for this protocol
+            const tools = await toolGenerator.generateTools(loadedProtocol.protocol);
+
+            for (const tool of tools) {
+              toolRegistry.register('community', {
+                name: tool.name,
+                description: tool.description,
+                category: 'community',
+                version: loadedProtocol.protocol.version || '1.0.0',
+                enabled: true,
+                inputSchema: tool.parameters,
+                handler: tool.handler,
+              });
+            }
+
+            console.error(`✅ Loaded ${tools.length} tools from ${protocolName}`);
+          } catch (protocolError: any) {
+            console.error(`❌ Failed to load protocol ${file}: ${protocolError.message}`);
+            logger.warn('Protocol loading failed', { file, error: protocolError.message });
+          }
+        }
+      } catch (dirError: any) {
+        console.error(`⚠️  Protocols directory not found or inaccessible: ${dirError.message}`);
+      }
+    }
+
     const registeredTools = toolRegistry.getTools();
     console.error(`✅ Server ready with ${registeredTools.length} tools available`);
     console.error('📋 Available tool categories:');
@@ -178,7 +237,7 @@ async function createMCPServer() {
   const server = new Server(
     {
       name: 'hl-eco-mcp',
-      version: '0.1.5-alpha',
+      version: '0.1.6-alpha',
     },
     {
       capabilities: {
