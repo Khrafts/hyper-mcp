@@ -1,0 +1,251 @@
+{
+  "name": "gluex-defi",
+  "version": "1.0.0",
+  "description": "GlueX Multi-Chain DeFi Protocol - Access router, liquidity, and token data across blockchains",
+  "author": "GlueX Protocol",
+  "license": "MIT",
+  "repository": "https://github.com/gluex/protocol",
+  "authentication": {
+    "type": "api_key",
+    "location": "header",
+    "name": "x-api-key"
+  },
+  "rateLimit": {
+    "requests": 100,
+    "window": "1m"
+  },
+  "endpoints": [
+    {
+      "name": "getLiquidity",
+      "method": "GET",
+      "path": "https://router.gluex.xyz/liquidity",
+      "description": "Get available liquidity across all supported chains and liquidity modules",
+      "authentication": true,
+      "response": {
+        "type": "object",
+        "description": "Liquidity information across chains",
+        "properties": {
+          "chains": {
+            "type": "array",
+            "description": "List of supported chains with their IDs"
+          },
+          "liquidityModules": {
+            "type": "object",
+            "description": "Available liquidity modules and their configurations"
+          }
+        }
+      }
+    },
+    {
+      "name": "searchTokens",
+      "method": "POST",
+      "path": "https://tokens.gluex.xyz/graphql",
+      "description": "Search for tokens matching a pattern on a specific chain",
+      "authentication": false,
+      "parameters": [
+        {
+          "name": "chain",
+          "type": "string",
+          "description": "Blockchain network identifier (e.g., 'ethereum', 'arbitrum', 'polygon')",
+          "required": true,
+          "enum": ["ethereum", "arbitrum", "polygon", "optimism", "base", "avalanche", "bsc"]
+        },
+        {
+          "name": "pattern",
+          "type": "string",
+          "description": "Search pattern for token name or symbol (e.g., 'USDC', 'ETH')",
+          "required": true,
+          "minLength": 1
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "description": "Maximum number of results to return",
+          "required": false,
+          "default": 20,
+          "minimum": 1,
+          "maximum": 100
+        },
+        {
+          "name": "offset",
+          "type": "number",
+          "description": "Number of results to skip for pagination",
+          "required": false,
+          "default": 0,
+          "minimum": 0
+        }
+      ],
+      "response": {
+        "type": "object",
+        "description": "Search results containing matching tokens"
+      }
+    },
+    {
+      "name": "getTokensByType",
+      "method": "POST",
+      "path": "https://tokens.gluex.xyz/graphql",
+      "description": "Get tokens by their functional type (e.g., stablecoin, governance, utility)",
+      "authentication": false,
+      "parameters": [
+        {
+          "name": "chain",
+          "type": "string",
+          "description": "Blockchain network identifier",
+          "required": true,
+          "enum": ["ethereum", "arbitrum", "polygon", "optimism", "base", "avalanche", "bsc"]
+        },
+        {
+          "name": "tokenType",
+          "type": "string",
+          "description": "Type of token to filter by",
+          "required": true,
+          "enum": ["stablecoin", "governance", "utility", "wrapped", "lp_token", "synthetic"]
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "description": "Maximum number of results",
+          "required": false,
+          "default": 20,
+          "minimum": 1,
+          "maximum": 100
+        }
+      ],
+      "response": {
+        "type": "object",
+        "description": "List of tokens matching the specified type"
+      }
+    },
+    {
+      "name": "listTokens",
+      "method": "POST",
+      "path": "https://tokens.gluex.xyz/graphql",
+      "description": "List all available tokens on a specific blockchain",
+      "authentication": false,
+      "parameters": [
+        {
+          "name": "chain",
+          "type": "string",
+          "description": "Blockchain network to list tokens from",
+          "required": true,
+          "enum": ["ethereum", "arbitrum", "polygon", "optimism", "base", "avalanche", "bsc"]
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "description": "Maximum number of tokens to return",
+          "required": false,
+          "default": 20,
+          "minimum": 1,
+          "maximum": 500
+        }
+      ],
+      "response": {
+        "type": "object",
+        "description": "List of all tokens on the specified chain"
+      }
+    },
+    {
+      "name": "getOptimalRoute",
+      "method": "POST",
+      "path": "https://router.gluex.xyz/quote",
+      "description": "Find the optimal swap route for trading tokens across chains",
+      "authentication": true,
+      "parameters": [
+        {
+          "name": "fromChain",
+          "type": "string",
+          "description": "Source blockchain network",
+          "required": true,
+          "enum": ["ethereum", "arbitrum", "polygon", "optimism", "base", "avalanche", "bsc"]
+        },
+        {
+          "name": "toChain",
+          "type": "string",
+          "description": "Destination blockchain network",
+          "required": true,
+          "enum": ["ethereum", "arbitrum", "polygon", "optimism", "base", "avalanche", "bsc"]
+        },
+        {
+          "name": "fromToken",
+          "type": "string",
+          "description": "Source token address",
+          "required": true,
+          "pattern": "^0x[a-fA-F0-9]{40}$"
+        },
+        {
+          "name": "toToken",
+          "type": "string",
+          "description": "Destination token address",
+          "required": true,
+          "pattern": "^0x[a-fA-F0-9]{40}$"
+        },
+        {
+          "name": "amount",
+          "type": "string",
+          "description": "Amount to swap (in token units with decimals)",
+          "required": true,
+          "pattern": "^[0-9]+(\\.[0-9]+)?$"
+        },
+        {
+          "name": "slippage",
+          "type": "number",
+          "description": "Maximum acceptable slippage percentage (0.1 = 0.1%)",
+          "required": false,
+          "default": 0.5,
+          "minimum": 0.1,
+          "maximum": 5
+        }
+      ],
+      "response": {
+        "type": "object",
+        "description": "Optimal route details including path, expected output, and gas estimates"
+      }
+    },
+    {
+      "name": "executeSwap",
+      "method": "POST",
+      "path": "https://router.gluex.xyz/swap",
+      "description": "Execute a token swap using the optimal route",
+      "authentication": true,
+      "parameters": [
+        {
+          "name": "routeId",
+          "type": "string",
+          "description": "Route ID from getOptimalRoute response",
+          "required": true
+        },
+        {
+          "name": "userAddress",
+          "type": "string",
+          "description": "User's wallet address",
+          "required": true,
+          "pattern": "^0x[a-fA-F0-9]{40}$"
+        },
+        {
+          "name": "deadline",
+          "type": "number",
+          "description": "Unix timestamp for transaction deadline",
+          "required": false
+        }
+      ],
+      "response": {
+        "type": "object",
+        "description": "Transaction data for executing the swap"
+      }
+    }
+  ],
+  "metadata": {
+    "category": "defi",
+    "tags": ["router", "swap", "liquidity", "cross-chain", "aggregator"],
+    "documentation": "https://docs.gluex.xyz",
+    "supportEmail": "support@gluex.xyz",
+    "features": [
+      "Multi-chain routing",
+      "Liquidity aggregation",
+      "Token discovery",
+      "Optimal path finding",
+      "Cross-chain swaps"
+    ]
+  }
+}
