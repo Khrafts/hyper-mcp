@@ -1,83 +1,219 @@
 # Getting Started
 
-This guide helps you install, configure, and run the HyperLiquid Ecosystem MCP Server locally and via Docker.
+> Get your AI agent trading on HyperLiquid and accessing DeFi protocols in 5 minutes! 🚀
 
-Prerequisites
+This guide will help you install **hl-eco-mcp** and start using AI agents for DeFi trading and protocol interactions.
 
-- Node.js 18+ and pnpm
-- Optional: Docker and Docker Compose
-- HyperLiquid wallet credentials (private key and address)
-- Optional: Community protocol contributions
+## 🎯 What You'll Achieve
 
-Install
+By the end of this guide, your AI agent will be able to:
 
-1. Clone the repository
-2. Install dependencies
+- Execute HyperLiquid trades with natural language commands
+- Access real-time market data and portfolio information
+- Interact with community-contributed DeFi protocols
+- Perform advanced risk management and smart execution
 
+## 📋 Prerequisites
+
+### Required
+
+- **Node.js 18+** and **pnpm** (for development setup)
+- **MCP Client** (Claude Desktop, Cursor, or any MCP-enabled application)
+
+### For Trading (Optional)
+
+- **HyperLiquid Account** with API credentials
+- **Wallet Private Key** and **Address** (for trading operations)
+
+### For Development (Optional)
+
+- **Docker** and **Docker Compose** (for containerized deployment)
+- **GitHub Account** (for contributing community protocols)
+
+## ⚡ Quick Install (Recommended)
+
+### Option 1: NPM Package (Easiest)
+
+```bash
+# Install globally
+npm install -g hl-eco-mcp
+
+# Or with pnpm
+pnpm add -g hl-eco-mcp
 ```
+
+### Option 2: Development Setup
+
+```bash
+# Clone and setup
+git clone https://github.com/khrafts/hyper-mcp.git
+cd hyper-mcp
 pnpm install
-```
 
-3. Copy the example environment file
-
-```
+# Copy environment template
 cp .env.example .env
+
+# Edit your configuration
+nano .env  # or your preferred editor
 ```
 
-4. Fill in values as needed (see configuration.md)
+## ⚙️ Configuration
 
-Run (local)
+### Basic Setup (Market Data Only)
 
-- Development: hot reload
-
+```bash
+# Minimal configuration for market data
+export LOG_LEVEL=info
+export MCP_SERVER_PORT=3000
 ```
+
+### Trading Setup (Full Features)
+
+```bash
+# HyperLiquid trading credentials
+export HYPERLIQUID_PRIVATE_KEY="0xYOUR_PRIVATE_KEY"
+export HYPERLIQUID_USER_ADDRESS="0xYOUR_WALLET_ADDRESS"
+export HYPERLIQUID_TESTNET="true"  # Start with testnet!
+
+# Community protocols (optional)
+export ENABLE_COMMUNITY_SYSTEM="true"
+```
+
+💡 **Security Tip**: Never commit private keys! Use environment variables or secure secret management.
+
+For complete configuration options, see [Configuration Guide](configuration.md).
+
+## 🚀 Run the Server
+
+### NPM Package
+
+```bash
+# Run with environment variables
+HYPERLIQUID_TESTNET=true hl-eco-mcp
+
+# Or with config file
+hl-eco-mcp --config ./my-config.env
+```
+
+### Development Mode
+
+```bash
+# Hot reload during development
 pnpm run dev
-```
 
-- Build and start
-
-```
+# Build and start production
 pnpm run build
 pnpm start
 ```
 
-Run (Docker)
-
-- Build the image
+You should see:
 
 ```
-docker build -t hyper-mcp:local .
+🚀 HyperLiquid MCP Server starting...
+✅ Server initialized on port 3000
+📊 HyperLiquid integration: ACTIVE
+🌐 Community protocols: 0 loaded
+🎯 Ready for AI agent connections!
 ```
 
-- Run the container
+### Docker Deployment
+
+```bash
+# Quick start with Docker
+docker run --rm -p 3000:3000 \
+  -e HYPERLIQUID_TESTNET=true \
+  -e HYPERLIQUID_PRIVATE_KEY=your_key_here \
+  khrafts/hl-eco-mcp:latest
+
+# Or build from source
+docker build -t hl-eco-mcp:local .
+docker run --rm -p 3000:3000 --env-file .env hl-eco-mcp:local
+```
+
+## 🔧 MCP Client Setup
+
+### Claude Desktop Configuration
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "hyperliquid": {
+      "command": "hl-eco-mcp",
+      "env": {
+        "HYPERLIQUID_PRIVATE_KEY": "your_private_key_here",
+        "HYPERLIQUID_USER_ADDRESS": "your_address_here",
+        "HYPERLIQUID_TESTNET": "true"
+      }
+    }
+  }
+}
+```
+
+### Other MCP Clients
+
+For Cursor, VS Code, or other MCP clients, configure according to their MCP integration documentation.
+
+## ✅ Verify Installation
+
+### Test Basic Functionality
+
+Ask your AI agent:
 
 ```
-docker run --rm -p 3000:3000 --env-file .env hyper-mcp:local
+"Check if the HyperLiquid MCP server is working"
 ```
 
-Testing and linting
+### Test Trading (Testnet)
 
-- Typecheck
+Ask your AI agent:
 
 ```
+"What's my HyperLiquid account balance?"
+"Show me the current BTC price on HyperLiquid"
+```
+
+### Development Testing
+
+```bash
+# Run type checking
 pnpm run typecheck
-```
 
-- Lint
-
-```
+# Run linting
 pnpm run lint
-```
 
-- Tests (Jest)
-
-```
+# Run test suite
 pnpm test
 ```
 
-Next steps
+## 🎯 Next Steps
 
-- **Configure your wallet**: Set up HyperLiquid credentials in configuration.md
-- **Explore available tools**: See tools/overview.md for HyperLiquid and community tools
-- **Contribute protocols**: Add your API as a community protocol (see CONTRIBUTING.md)
-- **Deploy in production**: Follow operations/README.md for deployment guidance
+### For Traders & Users
+
+1. **[Explore Available Tools](tools/overview.md)** - Discover all 32+ MCP tools for trading and analysis
+2. **[Security Best Practices](operations/security.md)** - Secure your setup for production trading
+3. **[Advanced Configuration](configuration.md)** - Customize risk limits, rate limiting, and features
+
+### For Protocol Teams
+
+1. **[Contribute Your Protocol](../CONTRIBUTING.md)** - Add your API to the ecosystem in 30 minutes
+2. **[Protocol Examples](../protocols/)** - See real examples like GlueX integration
+3. **[Community Guidelines](../CONTRIBUTING.md#community-guidelines)** - Join our growing community
+
+### For Developers
+
+1. **[Developer Guide](developer/README.md)** - Architecture overview and contribution workflow
+2. **[Operations Guide](operations/README.md)** - Production deployment and monitoring
+3. **[Integration Examples](integrations/README.md)** - Learn from existing integrations
+
+## 🆘 Getting Help
+
+- **Documentation Issues**: Check [troubleshooting guide](operations/troubleshooting.md)
+- **Bug Reports**: [GitHub Issues](https://github.com/khrafts/hyper-mcp/issues)
+- **Questions**: [GitHub Discussions](https://github.com/khrafts/hyper-mcp/discussions)
+- **Protocol Contributions**: See [CONTRIBUTING.md](../CONTRIBUTING.md)
+
+---
+
+**🎉 Congratulations!** Your AI agent is now connected to the HyperLiquid ecosystem. Start trading with natural language commands and explore the growing world of AI-accessible DeFi protocols!

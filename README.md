@@ -1,76 +1,97 @@
-# HyperLiquid MCP Server
+# HyperLiquid Ecosystem MCP Server
 
-> Transform any AI agent into a HyperLiquid trading powerhouse! 🚀
+> Transform ANY API into AI-accessible tools in 60 seconds! 🚀
 
-**hl-eco-mcp** is a community-driven Model Context Protocol (MCP) server that provides comprehensive AI integration for the HyperLiquid DEX ecosystem. Any protocol can contribute their API via simple JSON definitions that automatically become AI-accessible tools. Compatible with Claude Desktop, Cursor, and any MCP-enabled application.
+**hl-eco-mcp** is a revolutionary Model Context Protocol (MCP) server that makes every DeFi protocol instantly accessible to AI agents. Simply submit a JSON definition of your API, and watch it automatically transform into tools that Claude, ChatGPT, and any AI agent can use. No coding required, no complex integrations - just unlimited extensibility for the entire DeFi ecosystem.
 
-## 🌟 Features
+## 🌟 Core Features
 
-- **🎯 Full HyperLiquid Integration** - Complete access to all HyperLiquid trading functionality
-- **🤖 AI-Native Design** - Purpose-built for AI agents with natural language interfaces
-- **⚡ Real-Time Data** - Live market data, order book updates, and position monitoring
-- **🛡️ Advanced Risk Management** - Built-in position limits, drawdown monitoring, and alerts
-- **📊 Market Intelligence** - Technical analysis, sentiment data, and smart execution
-- **🔧 Easy Setup** - One command installation with comprehensive documentation
+- **♾️ Unlimited Extensibility** - Any REST API, GraphQL endpoint, or WebSocket feed becomes AI tools
+- **🤖 Zero-Code Integration** - JSON protocol definitions automatically generate MCP tools
+- **🌐 Community-Driven** - Protocols contributed by the community, for the community
+- **⚡ Instant Deployment** - Submit PR, get AI tools - it's that simple
+- **🛡️ Security Built-in** - Authentication, rate limiting, and validation for every protocol
+- **📊 Production Ready** - Battle-tested with HyperLiquid integration as the flagship example
 
 ## 🚀 Quick Start
 
-### Installation
+### For Protocol Teams - Add Your API in 30 Minutes
 
-```bash
-npm install -g hl-eco-mcp
+```json
+// protocols/your-protocol.json
+{
+  "name": "your-defi-protocol",
+  "version": "1.0.0",
+  "description": "Your protocol description",
+  "endpoints": [
+    {
+      "name": "getPoolInfo",
+      "method": "GET",
+      "path": "https://api.yourprotocol.com/pools/{poolId}",
+      "description": "Get liquidity pool information"
+    }
+  ]
+}
 ```
 
-### Setup Environment Variables
+**Result**: Your API is now accessible to every AI agent as `your_defi_protocol_getPoolInfo`!
+
+### For AI Users - Install and Use Any Protocol
 
 ```bash
-export HYPERLIQUID_PRIVATE_KEY="0x1234567890abcdef..."
-export HYPERLIQUID_USER_ADDRESS="0xYourWalletAddress"
-export HYPERLIQUID_TESTNET="true"  # Start with testnet
+# Install the MCP server
+npm install -g hl-eco-mcp
+
+# Configure with your favorite AI agent
+hl-eco-mcp --setup
 ```
 
 ### Claude Desktop Configuration
 
-Add to your `claude_desktop_config.json`:
-
 ```json
 {
   "mcpServers": {
-    "hyperliquid": {
+    "defi-ecosystem": {
       "command": "hl-eco-mcp",
       "env": {
-        "HYPERLIQUID_PRIVATE_KEY": "your_private_key_here",
-        "HYPERLIQUID_USER_ADDRESS": "your_address_here",
-        "HYPERLIQUID_TESTNET": "true"
+        "ENABLE_COMMUNITY_SYSTEM": "true",
+        // Add API keys for protocols you want to use
+        "HYPERLIQUID_PRIVATE_KEY": "your_key_here",
+        "GLUEX_DEFI_API_KEY": "your_key_here"
       }
     }
   }
 }
 ```
 
-### Start Trading with AI
+## 🛠️ What's Included
 
-```
-Ask Claude: "Check my HyperLiquid account balance and show my current positions"
-Ask Claude: "Place a buy order for 0.1 BTC at $45,000 with stop-loss at $43,000"
-Ask Claude: "Analyze the ETH market and recommend a trading strategy"
-```
+### Community Protocol System (Unlimited Tools)
 
-## 🛠️ Available Tools
+Any protocol can join the ecosystem:
 
-The server provides 32+ MCP tools across these categories:
+- **DeFi Protocols** - DEXs, lending platforms, yield aggregators
+- **Data Providers** - Price feeds, analytics, on-chain data
+- **Infrastructure** - RPCs, indexers, oracles
+- **Cross-Chain** - Bridges, aggregators, multi-chain protocols
+- **Your Protocol** - Whatever API you have, we can integrate!
 
-- **HyperLiquid Trading** - Orders, positions, account management
+### Example: HyperLiquid Integration (32+ Built-in Tools)
+
+As a demonstration of what's possible, we include a complete HyperLiquid integration:
+
+- **Trading** - Orders, positions, account management
 - **Market Data** - Real-time prices, order books, trade history
 - **Risk Management** - Portfolio analysis, risk limits, alerts
-- **Market Intelligence** - Technical analysis, sentiment data
 - **Smart Execution** - TWAP, VWAP, iceberg orders
+- **Market Intelligence** - Technical analysis, sentiment data
 
 ## 📖 Documentation
 
-- **[Installation Guide](./INSTALL.md)** - Detailed setup instructions
-- **[API Reference](./docs/)** - Complete tool documentation
-- **[Examples](./examples/)** - Usage examples and tutorials
+- **[Quick Start Guide](./docs/getting-started.md)** - Get running in 5 minutes
+- **[Protocol Contribution Guide](./CONTRIBUTING.md)** - Add your API to the ecosystem
+- **[API Reference](./docs/)** - Complete documentation for all tools
+- **[Examples](./protocols/)** - Real protocol definitions to learn from
 
 ## 🔒 Security
 
@@ -79,43 +100,35 @@ The server provides 32+ MCP tools across these categories:
 - Consider hardware wallets for mainnet trading
 - Monitor API access and permissions regularly
 
-## 🤝 Contributing
+## 🤝 Join the Ecosystem
 
-This is a community-driven project! Multiple ways to contribute:
+### 🎯 For Protocol Teams
 
-### 🎯 Protocol Contributors (Most Common)
+**Get your protocol AI-ready in 30 minutes:**
 
-1. **Create a Protocol**: Define your API in a simple JSON file
-2. **Submit PR**: Add to `protocols/your-protocol.json`
-3. **Automatic Tools**: Your API becomes MCP tools instantly!
-
-### 👨‍💻 Core Development
-
-1. **Fork** the repository
-2. **Create** a feature branch for core improvements
+1. **Fork** this repository
+2. **Create** a JSON definition of your API
 3. **Submit** a pull request
+4. **Done!** Your protocol is now accessible to every AI agent
 
-### 📖 Community Protocol Demo
+No SDK integration, no code changes, no maintenance - we handle everything.
 
-```json
-{
-  "name": "my-defi-protocol",
-  "version": "1.0.0",
-  "description": "My DeFi protocol API for AI agents",
-  "endpoints": [
-    {
-      "name": "getPoolInfo",
-      "method": "GET",
-      "path": "https://api.myprotocol.com/pools/{poolId}",
-      "description": "Get liquidity pool information"
-    }
-  ]
-}
-```
+### 🌟 Success Stories
 
-**Result**: Automatic `my_defi_protocol_getPoolInfo` MCP tool for AI agents!
+- **GlueX**: Multi-chain routing protocol - 6 endpoints via json specification
+- **HyperLiquid**: Complete DEX integration - 32+ tools demonstrating full capabilities
+- **Your Protocol**: Next success story - [Start here](./CONTRIBUTING.md)
 
-See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for the complete protocol contribution guide.
+### 👨‍💻 For Developers
+
+Extend the platform:
+
+- Enhance protocol validation
+- Improve tool generation
+- Add new authentication methods
+- Contribute to core infrastructure
+
+See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for detailed contribution guidelines.
 
 ## 📄 License
 
@@ -129,4 +142,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**Ready to trade with AI?** Install `hl-eco-mcp` now and transform your AI agent into a HyperLiquid trading expert! 💪
+**Ready to make your API AI-accessible?** Join the ecosystem today - your protocol could be live in 30 minutes! 🚀
+
+**For traders:** Access the entire DeFi ecosystem through natural language with your AI agent.
+**For builders:** Make your protocol instantly available to thousands of AI users.
+**For everyone:** The future of DeFi is AI-native, and it starts here.
