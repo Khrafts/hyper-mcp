@@ -13,7 +13,7 @@ const ConfigSchema = z.object({
   HYPERLIQUID_API_BASE_URL: z.string().default('https://api.hyperliquid.xyz'),
   HYPERLIQUID_WS_URL: z.string().default('wss://api.hyperliquid.xyz/ws'),
   HYPERLIQUID_API_KEY: z.string().optional(),
-  HYPERLIQUID_SECRET_KEY: z.string().optional(),
+  HYPERLIQUID_PRIVATE_KEY: z.string().optional(),
   HYPERLIQUID_USER_ADDRESS: z.string().optional(),
   HYPERLIQUID_TESTNET: z.coerce.boolean().default(false),
 
@@ -104,7 +104,7 @@ export const createConfigSections = (config: Config) => ({
       ? 'wss://api.hyperliquid-testnet.xyz/ws'
       : config.HYPERLIQUID_WS_URL,
     apiKey: config.HYPERLIQUID_API_KEY,
-    secretKey: config.HYPERLIQUID_SECRET_KEY,
+    secretKey: config.HYPERLIQUID_PRIVATE_KEY,
     userAddress: config.HYPERLIQUID_USER_ADDRESS,
     testnet: config.HYPERLIQUID_TESTNET,
   },
