@@ -91,7 +91,7 @@ export class SimpleAdapterManager {
         wsUrl: sections.hyperliquid.wsUrl,
         privateKey: sections.hyperliquid.secretKey,
         address: sections.hyperliquid.userAddress,
-        testnet: this.config.testnet,
+        testnet: sections.hyperliquid.testnet,
         timeout: sections.rateLimiting.apiTimeoutMs,
       };
 

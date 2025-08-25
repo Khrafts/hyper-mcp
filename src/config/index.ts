@@ -15,6 +15,7 @@ const ConfigSchema = z.object({
   HYPERLIQUID_API_KEY: z.string().optional(),
   HYPERLIQUID_SECRET_KEY: z.string().optional(),
   HYPERLIQUID_USER_ADDRESS: z.string().optional(),
+  HYPERLIQUID_TESTNET: z.coerce.boolean().default(false),
 
   // GlueX Configuration
   GLUEX_API_BASE_URL: z.string().default('https://api.gluex.org/v1'),
@@ -96,18 +97,25 @@ export const createConfigSections = (config: Config) => ({
     port: config.MCP_SERVER_PORT,
   },
   hyperliquid: {
-    apiBaseUrl: config.HYPERLIQUID_API_BASE_URL,
-    wsUrl: config.HYPERLIQUID_WS_URL,
+    apiBaseUrl: config.HYPERLIQUID_TESTNET
+      ? 'https://api.hyperliquid-testnet.xyz'
+      : config.HYPERLIQUID_API_BASE_URL,
+    wsUrl: config.HYPERLIQUID_TESTNET
+      ? 'wss://api.hyperliquid-testnet.xyz/ws'
+      : config.HYPERLIQUID_WS_URL,
     apiKey: config.HYPERLIQUID_API_KEY,
     secretKey: config.HYPERLIQUID_SECRET_KEY,
     userAddress: config.HYPERLIQUID_USER_ADDRESS,
+    testnet: config.HYPERLIQUID_TESTNET,
   },
   gluex: {
     apiBaseUrl: config.GLUEX_API_BASE_URL,
     apiKey: config.GLUEX_API_KEY,
   },
   nodeInfo: {
-    apiBaseUrl: config.NODE_INFO_API_BASE_URL,
+    apiBaseUrl: config.HYPERLIQUID_TESTNET
+      ? 'https://api.hyperliquid-testnet.xyz/info'
+      : config.NODE_INFO_API_BASE_URL,
   },
   rateLimiting: {
     requestsPerMinute: config.API_RATE_LIMIT_REQUESTS_PER_MINUTE,
