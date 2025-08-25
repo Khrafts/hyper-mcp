@@ -81,15 +81,6 @@ export const HyperLiquidSchemas = {
   leverage: z.number().min(1).max(50, 'Leverage must be between 1 and 50'),
 };
 
-// GlueX-specific schemas
-export const GlueXSchemas = {
-  chainId: z.number().int().positive('Chain ID must be a positive integer'),
-  tokenAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid token address format'),
-  amount: z.string().regex(/^\d+(\.\d+)?$/, 'Amount must be a valid decimal string'),
-  slippage: z.number().min(0).max(50, 'Slippage must be between 0 and 50 percent'),
-  deadline: z.number().int().positive('Deadline must be a positive integer'),
-};
-
 export class ValidationUtils {
   private static instance: ValidationUtils;
   private customValidators = new Map<string, z.ZodSchema>();

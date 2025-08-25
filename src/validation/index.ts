@@ -7,7 +7,6 @@ export type { ValidationResult, ValidationContext } from './ValidationUtils.js';
 export {
   CommonSchemas,
   HyperLiquidSchemas,
-  GlueXSchemas,
   Sanitizers,
   validationUtils,
 } from './ValidationUtils.js';

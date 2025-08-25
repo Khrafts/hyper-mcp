@@ -11,7 +11,6 @@
  *   HYPERLIQUID_PRIVATE_KEY     - Your wallet private key
  *   HYPERLIQUID_USER_ADDRESS    - Your wallet address
  *   HYPERLIQUID_TESTNET         - Set to 'true' for testnet (default: false)
- *   GLUEX_API_KEY              - Optional GlueX API key for cross-chain
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -45,7 +44,6 @@ ENVIRONMENT VARIABLES:
   HYPERLIQUID_PRIVATE_KEY     Your wallet private key (required)
   HYPERLIQUID_USER_ADDRESS    Your wallet address (required)
   HYPERLIQUID_TESTNET         Set to 'true' for testnet (default: false)
-  GLUEX_API_KEY              Optional GlueX API key for cross-chain
 
 EXAMPLES:
   # Start server with testnet
@@ -129,10 +127,6 @@ function displayStartupInfo(config: ReturnType<typeof getConfig>) {
     `🔗 API: ${config.HYPERLIQUID_TESTNET ? 'https://api.hyperliquid-testnet.xyz' : 'https://api.hyperliquid.xyz'}`
   );
 
-  if (config.GLUEX_API_KEY && config.GLUEX_API_KEY !== 'your_gluex_api_key_here') {
-    console.error('✅ GlueX integration enabled');
-  }
-
   console.error('⏳ Initializing adapters...\n');
 }
 
@@ -151,7 +145,6 @@ async function createMCPServer() {
   const toolRegistry = new ToolRegistry();
   const adapterManager = new SimpleAdapterManager(toolRegistry, {
     enableHyperLiquid: true,
-    enableGlueX: !!(config.GLUEX_API_KEY && config.GLUEX_API_KEY !== 'your_gluex_api_key_here'),
     testnet: config.HYPERLIQUID_TESTNET,
   });
 
@@ -288,7 +281,6 @@ async function main() {
       console.log('✅ Configuration is valid');
       console.log(`Network: ${config.HYPERLIQUID_TESTNET ? 'TESTNET' : 'MAINNET'}`);
       console.log(`Address: ${config.HYPERLIQUID_USER_ADDRESS}`);
-      console.log(`GlueX: ${config.GLUEX_API_KEY ? 'Enabled' : 'Disabled'}`);
     }
     process.exit(config ? 0 : 1);
   }

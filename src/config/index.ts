@@ -17,10 +17,6 @@ const ConfigSchema = z.object({
   HYPERLIQUID_USER_ADDRESS: z.string().optional(),
   HYPERLIQUID_TESTNET: z.coerce.boolean().default(false),
 
-  // GlueX Configuration
-  GLUEX_API_BASE_URL: z.string().default('https://router.gluex.xyz'),
-  GLUEX_API_KEY: z.string().optional(),
-
   // Node Info API Configuration
   NODE_INFO_API_BASE_URL: z.string().default('https://api.nodeinfo.hyperliquid.xyz'),
 
@@ -107,10 +103,6 @@ export const createConfigSections = (config: Config) => ({
     secretKey: config.HYPERLIQUID_PRIVATE_KEY,
     userAddress: config.HYPERLIQUID_USER_ADDRESS,
     testnet: config.HYPERLIQUID_TESTNET,
-  },
-  gluex: {
-    apiBaseUrl: config.GLUEX_API_BASE_URL,
-    apiKey: config.GLUEX_API_KEY,
   },
   nodeInfo: {
     apiBaseUrl: config.HYPERLIQUID_TESTNET

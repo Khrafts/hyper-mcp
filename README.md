@@ -10,7 +10,6 @@
 - **🤖 AI-Native Design** - Purpose-built for AI agents with natural language interfaces
 - **⚡ Real-Time Data** - Live market data, order book updates, and position monitoring
 - **🛡️ Advanced Risk Management** - Built-in position limits, drawdown monitoring, and alerts
-- **🌉 Cross-Chain Support** - GlueX integration for multi-chain operations
 - **📊 Market Intelligence** - Technical analysis, sentiment data, and smart execution
 - **🔧 Easy Setup** - One command installation with comprehensive documentation
 
@@ -66,7 +65,6 @@ The server provides 32+ MCP tools across these categories:
 - **Risk Management** - Portfolio analysis, risk limits, alerts
 - **Market Intelligence** - Technical analysis, sentiment data
 - **Smart Execution** - TWAP, VWAP, iceberg orders
-- **Cross-Chain** - GlueX bridging and multi-chain operations
 
 ## 📖 Documentation
 
