@@ -54,7 +54,7 @@ export class WebSocketManager extends EventEmitter {
         logger.error('WebSocket connection timeout');
         this.ws?.terminate();
         reject(new Error('Connection timeout'));
-      }, 10000);
+      }, 5000);
 
       this.ws.on('open', () => {
         clearTimeout(connectTimeout);

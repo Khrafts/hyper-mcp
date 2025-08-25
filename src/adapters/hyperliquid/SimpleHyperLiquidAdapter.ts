@@ -109,11 +109,20 @@ export class SimpleHyperLiquidAdapter extends BaseAdapter {
       // Test connection with a simple API call
       await this.makeRequest('/info', { type: 'allMids' });
 
-      // Auto-connect WebSocket for real-time data
-      await this.connectWebSocket();
+      // Try to connect WebSocket for real-time data, but don't fail if it doesn't work
+      let websocketConnected = false;
+      try {
+        await this.connectWebSocket();
+        websocketConnected = true;
+        logger.info('WebSocket connected successfully');
+      } catch (wsError) {
+        logger.warn('Failed to connect WebSocket, continuing without real-time data', {
+          error: wsError instanceof Error ? wsError.message : 'Unknown WebSocket error',
+        });
+      }
 
       logger.info('HyperLiquid adapter initialized successfully', {
-        websocket_connected: true,
+        websocket_connected: websocketConnected,
         has_auth: !!this.privateKey,
       });
     } catch (error) {

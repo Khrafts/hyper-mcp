@@ -10,7 +10,7 @@
  * Environment Variables:
  *   HYPERLIQUID_PRIVATE_KEY     - Your wallet private key
  *   HYPERLIQUID_USER_ADDRESS    - Your wallet address
- *   HYPERLIQUID_TESTNET         - Set to 'true' for testnet (default: false)
+ *   HYPERLIQUID_NETWORK         - Network to use: 'mainnet' or 'testnet' (default: mainnet)
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -20,6 +20,7 @@ import { getConfig, validateConfig } from '../config/index.js';
 import { SimpleAdapterManager } from '../server/SimpleAdapterManager.js';
 import { ToolRegistry } from '../server/ToolRegistry.js';
 import { createComponentLogger } from '../utils/logger.js';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const logger = createComponentLogger('MCP_SERVER_CLI');
 
@@ -43,11 +44,14 @@ OPTIONS:
 ENVIRONMENT VARIABLES:
   HYPERLIQUID_PRIVATE_KEY     Your wallet private key (required)
   HYPERLIQUID_USER_ADDRESS    Your wallet address (required)
-  HYPERLIQUID_TESTNET         Set to 'true' for testnet (default: false)
+  HYPERLIQUID_NETWORK         Network to use: 'mainnet' or 'testnet' (default: mainnet)
 
 EXAMPLES:
   # Start server with testnet
-  HYPERLIQUID_TESTNET=true hl-eco-mcp
+  HYPERLIQUID_NETWORK=testnet hl-eco-mcp
+
+  # Start server with mainnet (default)
+  HYPERLIQUID_NETWORK=mainnet hl-eco-mcp
 
   # Start with custom configuration
   HYPERLIQUID_PRIVATE_KEY=0x123... HYPERLIQUID_USER_ADDRESS=0xabc... hl-eco-mcp
@@ -118,13 +122,14 @@ function validateEnvironment() {
  * Display startup information
  */
 function displayStartupInfo(config: ReturnType<typeof getConfig>) {
-  const network = config.HYPERLIQUID_TESTNET ? 'TESTNET' : 'MAINNET';
+  const network = config.HYPERLIQUID_NETWORK;
+  const isTestnet = network === 'testnet';
 
   console.error('🚀 HyperLiquid MCP Server starting...');
-  console.error(`📡 Network: ${network}`);
+  console.error(`📡 Network: ${network.toUpperCase()}`);
   console.error(`👛 Address: ${config.HYPERLIQUID_USER_ADDRESS}`);
   console.error(
-    `🔗 API: ${config.HYPERLIQUID_TESTNET ? 'https://api.hyperliquid-testnet.xyz' : 'https://api.hyperliquid.xyz'}`
+    `🔗 API: ${isTestnet ? 'https://api.hyperliquid-testnet.xyz' : 'https://api.hyperliquid.xyz'}`
   );
 
   console.error('⏳ Initializing adapters...\n');
@@ -145,7 +150,7 @@ async function createMCPServer() {
   const toolRegistry = new ToolRegistry();
   const adapterManager = new SimpleAdapterManager(toolRegistry, {
     enableHyperLiquid: true,
-    testnet: config.HYPERLIQUID_TESTNET,
+    testnet: config.HYPERLIQUID_NETWORK === 'testnet',
   });
 
   try {
@@ -173,12 +178,11 @@ async function createMCPServer() {
   const server = new Server(
     {
       name: 'hl-eco-mcp',
-      version: '1.0.0',
+      version: '0.1.2-alpha',
     },
     {
       capabilities: {
         tools: {},
-        logging: {},
       },
     }
   );
@@ -190,7 +194,7 @@ async function createMCPServer() {
       tools: tools.map((tool: any) => ({
         name: tool.name,
         description: tool.description,
-        inputSchema: tool.schema,
+        inputSchema: zodToJsonSchema(tool.schema),
       })),
     };
   });
@@ -279,7 +283,7 @@ async function main() {
     const config = validateEnvironment();
     if (config) {
       console.log('✅ Configuration is valid');
-      console.log(`Network: ${config.HYPERLIQUID_TESTNET ? 'TESTNET' : 'MAINNET'}`);
+      console.log(`Network: ${config.HYPERLIQUID_NETWORK.toUpperCase()}`);
       console.log(`Address: ${config.HYPERLIQUID_USER_ADDRESS}`);
     }
     process.exit(config ? 0 : 1);

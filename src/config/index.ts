@@ -15,7 +15,7 @@ const ConfigSchema = z.object({
   HYPERLIQUID_API_KEY: z.string().optional(),
   HYPERLIQUID_PRIVATE_KEY: z.string().optional(),
   HYPERLIQUID_USER_ADDRESS: z.string().optional(),
-  HYPERLIQUID_TESTNET: z.coerce.boolean().default(false),
+  HYPERLIQUID_NETWORK: z.enum(['mainnet', 'testnet']).default('mainnet'),
 
   // Node Info API Configuration
   NODE_INFO_API_BASE_URL: z.string().default('https://api.nodeinfo.hyperliquid.xyz'),
@@ -86,62 +86,65 @@ export function validateConfig(): { valid: boolean; errors: string[] } {
 }
 
 // Export individual config sections for convenience
-export const createConfigSections = (config: Config) => ({
-  server: {
-    nodeEnv: config.NODE_ENV,
-    logLevel: config.LOG_LEVEL,
-    port: config.MCP_SERVER_PORT,
-  },
-  hyperliquid: {
-    apiBaseUrl: config.HYPERLIQUID_TESTNET
-      ? 'https://api.hyperliquid-testnet.xyz'
-      : config.HYPERLIQUID_API_BASE_URL,
-    wsUrl: config.HYPERLIQUID_TESTNET
-      ? 'wss://api.hyperliquid-testnet.xyz/ws'
-      : config.HYPERLIQUID_WS_URL,
-    apiKey: config.HYPERLIQUID_API_KEY,
-    secretKey: config.HYPERLIQUID_PRIVATE_KEY,
-    userAddress: config.HYPERLIQUID_USER_ADDRESS,
-    testnet: config.HYPERLIQUID_TESTNET,
-  },
-  nodeInfo: {
-    apiBaseUrl: config.HYPERLIQUID_TESTNET
-      ? 'https://api.hyperliquid-testnet.xyz/info'
-      : config.NODE_INFO_API_BASE_URL,
-  },
-  rateLimiting: {
-    requestsPerMinute: config.API_RATE_LIMIT_REQUESTS_PER_MINUTE,
-    wsReconnectDelayMs: config.WEBSOCKET_RECONNECT_DELAY_MS,
-    apiTimeoutMs: config.API_TIMEOUT_MS,
-  },
-  risk: {
-    positionLimit: config.DEFAULT_POSITION_LIMIT,
-    maxDrawdownPercent: config.DEFAULT_MAX_DRAWDOWN_PERCENT,
-    varConfidenceLevel: config.DEFAULT_VAR_CONFIDENCE_LEVEL,
-  },
-  performance: {
-    cacheTtlSeconds: config.CACHE_TTL_SECONDS,
-    maxConcurrentRequests: config.MAX_CONCURRENT_REQUESTS,
-  },
-  development: {
-    enableDebugLogging: config.ENABLE_DEBUG_LOGGING,
-    mockExternalApis: config.MOCK_EXTERNAL_APIS,
-  },
-  community: {
-    enabled: config.ENABLE_COMMUNITY_SYSTEM,
-    repository: config.COMMUNITY_REPOSITORY,
-    autoMerge: config.COMMUNITY_AUTO_MERGE,
-    maxEndpoints: config.COMMUNITY_MAX_ENDPOINTS,
-    strictMode: config.COMMUNITY_STRICT_MODE,
-    cacheTtlMs: config.COMMUNITY_CACHE_TTL_MS,
-    validationTimeoutMs: config.COMMUNITY_VALIDATION_TIMEOUT_MS,
-    githubToken: config.GITHUB_TOKEN,
-    githubWebhookSecret: config.GITHUB_WEBHOOK_SECRET,
-    allowedDomains: config.COMMUNITY_ALLOWED_DOMAINS?.split(',')
-      .map((d) => d.trim())
-      .filter(Boolean),
-  },
-});
+export const createConfigSections = (config: Config) => {
+  const isTestnet = config.HYPERLIQUID_NETWORK === 'testnet';
+
+  return {
+    server: {
+      nodeEnv: config.NODE_ENV,
+      logLevel: config.LOG_LEVEL,
+      port: config.MCP_SERVER_PORT,
+    },
+    hyperliquid: {
+      apiBaseUrl: isTestnet
+        ? 'https://api.hyperliquid-testnet.xyz'
+        : config.HYPERLIQUID_API_BASE_URL,
+      wsUrl: isTestnet ? 'wss://api.hyperliquid-testnet.xyz/ws' : config.HYPERLIQUID_WS_URL,
+      apiKey: config.HYPERLIQUID_API_KEY,
+      secretKey: config.HYPERLIQUID_PRIVATE_KEY,
+      userAddress: config.HYPERLIQUID_USER_ADDRESS,
+      testnet: isTestnet,
+      network: config.HYPERLIQUID_NETWORK,
+    },
+    nodeInfo: {
+      apiBaseUrl: isTestnet
+        ? 'https://api.hyperliquid-testnet.xyz/info'
+        : config.NODE_INFO_API_BASE_URL,
+    },
+    rateLimiting: {
+      requestsPerMinute: config.API_RATE_LIMIT_REQUESTS_PER_MINUTE,
+      wsReconnectDelayMs: config.WEBSOCKET_RECONNECT_DELAY_MS,
+      apiTimeoutMs: config.API_TIMEOUT_MS,
+    },
+    risk: {
+      positionLimit: config.DEFAULT_POSITION_LIMIT,
+      maxDrawdownPercent: config.DEFAULT_MAX_DRAWDOWN_PERCENT,
+      varConfidenceLevel: config.DEFAULT_VAR_CONFIDENCE_LEVEL,
+    },
+    performance: {
+      cacheTtlSeconds: config.CACHE_TTL_SECONDS,
+      maxConcurrentRequests: config.MAX_CONCURRENT_REQUESTS,
+    },
+    development: {
+      enableDebugLogging: config.ENABLE_DEBUG_LOGGING,
+      mockExternalApis: config.MOCK_EXTERNAL_APIS,
+    },
+    community: {
+      enabled: config.ENABLE_COMMUNITY_SYSTEM,
+      repository: config.COMMUNITY_REPOSITORY,
+      autoMerge: config.COMMUNITY_AUTO_MERGE,
+      maxEndpoints: config.COMMUNITY_MAX_ENDPOINTS,
+      strictMode: config.COMMUNITY_STRICT_MODE,
+      cacheTtlMs: config.COMMUNITY_CACHE_TTL_MS,
+      validationTimeoutMs: config.COMMUNITY_VALIDATION_TIMEOUT_MS,
+      githubToken: config.GITHUB_TOKEN,
+      githubWebhookSecret: config.GITHUB_WEBHOOK_SECRET,
+      allowedDomains: config.COMMUNITY_ALLOWED_DOMAINS?.split(',')
+        .map((d) => d.trim())
+        .filter(Boolean),
+    },
+  };
+};
 
 // Create community system configuration from main config
 export function createCommunitySystemConfig(

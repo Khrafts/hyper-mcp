@@ -1,6 +1,6 @@
 {
   "name": "hl-eco-mcp",
-  "version": "0.1.1-alpha",
+  "version": "0.1.4-alpha",
   "description": "HyperLiquid MCP Server - AI Agent Gateway for the HyperLiquid DEX ecosystem",
   "main": "dist/index.js",
   "bin": {
@@ -53,7 +53,8 @@
     "ethers": "^6.15.0",
     "winston": "^3.13.0",
     "ws": "^8.18.3",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
