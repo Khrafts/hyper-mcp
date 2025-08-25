@@ -108,7 +108,14 @@ export class SimpleHyperLiquidAdapter extends BaseAdapter {
     try {
       // Test connection with a simple API call
       await this.makeRequest('/info', { type: 'allMids' });
-      logger.info('HyperLiquid adapter initialized successfully');
+
+      // Auto-connect WebSocket for real-time data
+      await this.connectWebSocket();
+
+      logger.info('HyperLiquid adapter initialized successfully', {
+        websocket_connected: true,
+        has_auth: !!this.privateKey,
+      });
     } catch (error) {
       logger.error('Failed to initialize HyperLiquid adapter', { error });
       throw error;

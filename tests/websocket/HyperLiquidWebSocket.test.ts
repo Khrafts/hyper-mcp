@@ -256,7 +256,9 @@ describe('HyperLiquidWebSocket Tests', () => {
 
       const status = hyperLiquidWS.getStatus();
 
-      expect(status.activeSubscriptions).toHaveLength(0); // Callbacks are tracked separately
+      expect(status.activeSubscriptions).toHaveLength(2); // Should track both subscriptions
+      expect(status.activeSubscriptions[0]).toContain('allMids');
+      expect(status.activeSubscriptions[1]).toContain('l2Book_BTC');
     });
   });
 

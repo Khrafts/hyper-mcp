@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { encode as encodeMsgpack } from '@msgpack/msgpack';
 import { createComponentLogger } from './logger.js';
 
 const logger = createComponentLogger('CRYPTO_UTILS');
@@ -68,60 +69,141 @@ export class HyperLiquidSigner {
   }
 
   /**
-   * Sign a HyperLiquid action using EIP-712 structured data signing
+   * Sign L1 actions using HyperLiquid's Exchange domain
+   * Based on the TypeScript SDK implementation
    */
-  async signAction(action: HyperLiquidAction, nonce: number): Promise<string> {
+  async signL1Action(
+    action: HyperLiquidAction,
+    nonce: number,
+    vaultAddress?: string
+  ): Promise<string> {
     try {
-      // Create the structured data for EIP-712 signing
+      // L1 Action domain structure
       const domain = {
-        name: 'HyperLiquid',
+        name: 'Exchange',
         version: '1',
-        chainId: 1337, // HyperLiquid uses 1337
+        chainId: 1337,
         verifyingContract: '0x0000000000000000000000000000000000000000',
       };
 
+      // Create the action payload
+      const actionPayload: any = {
+        action,
+        nonce,
+      };
+
+      if (vaultAddress) {
+        actionPayload.vaultAddress = vaultAddress;
+      }
+
+      // Create L1 action hash using msgpack
+      const actionBytes = encodeMsgpack(actionPayload);
+      const actionHash = ethers.keccak256(actionBytes);
+
+      // Agent type for L1 actions
       const types = {
         Agent: [
           { name: 'source', type: 'string' },
           { name: 'connectionId', type: 'bytes32' },
         ],
-        HyperLiquidTransaction: [
-          { name: 'action', type: 'string' },
-          { name: 'nonce', type: 'uint64' },
-        ],
       };
-
-      // Convert action to string for signing
-      const actionString = JSON.stringify(action);
 
       const value = {
-        action: actionString,
-        nonce: nonce,
+        source: 'a', // Standard source identifier
+        connectionId: actionHash,
       };
 
-      logger.debug('Signing HyperLiquid action', {
+      logger.debug('Signing HyperLiquid L1 action', {
         action_type: action.type,
         nonce,
         address: this.wallet.address,
+        action_hash: actionHash.slice(0, 10) + '...',
       });
 
       // Sign using EIP-712
       const signature = await this.wallet.signTypedData(domain, types, value);
 
-      logger.debug('Action signed successfully', {
+      logger.debug('L1 action signed successfully', {
         signature_length: signature.length,
         action_type: action.type,
       });
 
       return signature;
     } catch (error) {
-      logger.error('Failed to sign HyperLiquid action', {
+      logger.error('Failed to sign L1 action', {
         error: error instanceof Error ? error.message : 'Unknown error',
         action_type: action.type,
         nonce,
       });
       throw error;
     }
+  }
+
+  /**
+   * Sign user-signed actions using HyperliquidSignTransaction domain
+   * For actions that require user-specific signing
+   */
+  async signUserAction(
+    action: HyperLiquidAction,
+    nonce: number,
+    chainId: number = 42161
+  ): Promise<string> {
+    try {
+      // User-signed action domain
+      const domain = {
+        name: 'HyperliquidSignTransaction',
+        version: '1',
+        chainId: chainId,
+        verifyingContract: '0x0000000000000000000000000000000000000000',
+      };
+
+      // Message types for user-signed actions
+      const types = {
+        HyperliquidTransaction: [
+          { name: 'action', type: 'string' },
+          { name: 'nonce', type: 'uint64' },
+        ],
+      };
+
+      const value = {
+        action: JSON.stringify(action),
+        nonce: nonce,
+      };
+
+      logger.debug('Signing user action', {
+        action_type: action.type,
+        nonce,
+        chain_id: chainId,
+      });
+
+      const signature = await this.wallet.signTypedData(domain, types, value);
+
+      logger.debug('User action signed successfully', {
+        action_type: action.type,
+        nonce,
+      });
+
+      return signature;
+    } catch (error) {
+      logger.error('Failed to sign user action', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        action_type: action.type,
+        nonce,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Default signing method - uses L1 action signing
+   * Maintains backward compatibility
+   */
+  async signAction(
+    action: HyperLiquidAction,
+    nonce: number,
+    vaultAddress?: string
+  ): Promise<string> {
+    return this.signL1Action(action, nonce, vaultAddress);
   }
 
   /**

@@ -118,6 +118,13 @@ export class HyperLiquidWebSocket {
       },
     });
 
+    this.subscriptionCallbacks.set(subscriptionId, (data: unknown) => {
+      const message = data as HyperLiquidMessage['data'];
+      if (message.mids) {
+        callback(message.mids);
+      }
+    });
+
     return subscriptionId;
   }
 
@@ -138,6 +145,13 @@ export class HyperLiquidWebSocket {
           callback({ levels: message.levels });
         }
       },
+    });
+
+    this.subscriptionCallbacks.set(subscriptionId, (data: unknown) => {
+      const message = data as HyperLiquidMessage['data'];
+      if (message.levels) {
+        callback({ levels: message.levels });
+      }
     });
 
     return subscriptionId;
@@ -256,20 +270,69 @@ export class HyperLiquidWebSocket {
 
   private handleMessage(message: unknown): void {
     try {
-      // HyperLiquid WebSocket message handling
-      if (typeof message === 'object' && message !== null) {
-        const hlMessage = message as HyperLiquidMessage;
+      // Parse incoming WebSocket message
+      let parsedMessage: any;
 
-        logger.debug('Received HyperLiquid message', {
-          channel: hlMessage.channel,
-          dataKeys: Object.keys(hlMessage.data || {}),
+      if (typeof message === 'string') {
+        parsedMessage = JSON.parse(message);
+      } else {
+        parsedMessage = message;
+      }
+
+      // Check if it's a subscription data message
+      if (parsedMessage && parsedMessage.channel && parsedMessage.data) {
+        logger.debug('Received HyperLiquid data message', {
+          channel: parsedMessage.channel,
+          dataType: typeof parsedMessage.data,
         });
 
-        // The WebSocketManager will route to appropriate subscription callbacks
+        // Route message to appropriate subscription callbacks based on channel
+        this.routeMessage(parsedMessage);
+      } else {
+        logger.debug('Received non-data message', { message: parsedMessage });
       }
     } catch (error) {
       logger.error('Error handling HyperLiquid message', { error, message });
     }
+  }
+
+  private routeMessage(message: HyperLiquidMessage): void {
+    // Find matching subscriptions and invoke callbacks
+    for (const [subscriptionId, callback] of this.subscriptionCallbacks.entries()) {
+      // Simple routing based on subscription ID patterns
+      if (this.shouldRouteMessage(subscriptionId, message)) {
+        try {
+          callback(message.data);
+        } catch (error) {
+          logger.error('Error in subscription callback', {
+            subscriptionId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
+    }
+  }
+
+  private shouldRouteMessage(subscriptionId: string, message: HyperLiquidMessage): boolean {
+    // Extract subscription type from ID (e.g., 'allMids_1234567890')
+    const subscriptionType = subscriptionId.split('_')[0];
+
+    if (!subscriptionType) {
+      return false;
+    }
+
+    // Map subscription types to message channels
+    const channelMapping: Record<string, string[]> = {
+      allMids: ['allMids'],
+      l2Book: ['l2Book'],
+      trades: ['trades'],
+      candle: ['candle'],
+      orderUpdates: ['orderUpdates'],
+      userFills: ['userFills'],
+    };
+
+    const expectedChannels = channelMapping[subscriptionType];
+    return expectedChannels ? expectedChannels.includes(message.channel) : false;
   }
 
   private generateSubscriptionId(type: string, ...params: string[]): string {

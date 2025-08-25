@@ -287,12 +287,16 @@ export class WebSocketManager extends EventEmitter {
   }
 
   private sendSubscription(subscription: WebSocketSubscription): void {
+    // HyperLiquid expects this specific format
     const subscribeMessage = {
       method: 'subscribe',
-      channel: subscription.channel,
-      params: subscription.params,
-      id: subscription.id,
+      subscription: subscription.params,
     };
+
+    logger.debug('Sending HyperLiquid subscription', {
+      id: subscription.id,
+      subscription: subscription.params,
+    });
 
     this.send(subscribeMessage);
   }
