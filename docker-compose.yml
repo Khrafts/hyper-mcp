@@ -4,20 +4,21 @@ services:
   hyper-mcp:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
-      - NODE_ENV=development
-      - LOG_LEVEL=debug
-    volumes:
-      - ./src:/app/src:ro
-      - ./dist:/app/dist
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+    # No dist volume mount to avoid masking the built artifacts
+    # Uncomment the following line if you want live-reloading via bind mounts and a dev entrypoint
+    # volumes:
+    #   - .:/app
     depends_on:
       - redis
-    
+
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes

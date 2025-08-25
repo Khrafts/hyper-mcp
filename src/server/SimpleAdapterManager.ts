@@ -99,10 +99,10 @@ export class SimpleAdapterManager {
       this.hyperLiquidAdapter = new SimpleHyperLiquidAdapter(adapterConfig);
       await this.hyperLiquidAdapter.connect();
 
-      // Initialize node info adapter
+      // Initialize node info adapter (optional)
       this.nodeInfoAdapter = new HyperLiquidNodeInfoAdapter({
         name: 'hyperliquid-node-info',
-        baseUrl: sections.hyperliquid.apiBaseUrl + '/info',
+        baseUrl: sections.nodeInfo.apiBaseUrl,
         timeout: sections.rateLimiting.apiTimeoutMs,
       });
 
@@ -116,14 +116,34 @@ export class SimpleAdapterManager {
       this.marketIntelligenceTools = new MarketIntelligenceTools(this.hyperLiquidAdapter);
       this.executionTools = new ExecutionTools(this.executionEngine);
       this.riskTools = new RiskManagementTools(this.riskEngine);
-      this.nodeInfoTools = new NodeInfoTools(this.nodeInfoAdapter);
+
+      // Node info tools are registered only if the endpoint is reachable
+      try {
+        const nodeHealth = await this.nodeInfoAdapter.healthCheck();
+        if (nodeHealth.healthy) {
+          this.nodeInfoTools = new NodeInfoTools(this.nodeInfoAdapter);
+          this.registerNodeInfoTools();
+          logger.info('Node Info tools enabled', { base_url: sections.nodeInfo.apiBaseUrl });
+        } else {
+          logger.warn('Node Info API unreachable; Node Info tools disabled', {
+            base_url: sections.nodeInfo.apiBaseUrl,
+            details: nodeHealth.details,
+          });
+          this.nodeInfoAdapter = undefined as unknown as HyperLiquidNodeInfoAdapter;
+        }
+      } catch (e) {
+        logger.warn('Node Info API health check failed; Node Info tools disabled', {
+          base_url: sections.nodeInfo.apiBaseUrl,
+          error: e instanceof Error ? e.message : String(e),
+        });
+        this.nodeInfoAdapter = undefined as unknown as HyperLiquidNodeInfoAdapter;
+      }
 
       // Register all tools
       this.registerHyperLiquidTools();
       this.registerMarketIntelligenceTools();
       this.registerExecutionTools();
       this.registerRiskManagementTools();
-      this.registerNodeInfoTools();
 
       logger.info('HyperLiquid adapter initialized successfully', {
         metadata: this.hyperLiquidAdapter.getMetadata(),

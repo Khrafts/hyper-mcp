@@ -70,4 +70,4 @@ docker-compose.override.yml
 .mcp.json
 
 # others
-/docs
+/doc

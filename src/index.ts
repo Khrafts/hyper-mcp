@@ -90,6 +90,22 @@ async function main() {
       tools_registered: (healthStatus.details.tools as any)?.totalTools || 0,
     });
 
+    // Log Node Info tools status
+    try {
+      const nodeInfoTools = server.toolRegistry.getToolsByCategory('node_info');
+      if (nodeInfoTools.length > 0) {
+        logger.info('Node Info tools enabled', {
+          node_info_tool_count: nodeInfoTools.length,
+        });
+      } else {
+        logger.info('Node Info tools disabled or not configured');
+      }
+    } catch (e) {
+      logger.warn('Unable to determine Node Info tools status', {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+
     // Keep process running
     logger.info('Server is running. Press Ctrl+C to stop.');
   } catch (error) {

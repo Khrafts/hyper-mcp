@@ -187,6 +187,11 @@ export class MCPServer implements IMCPServer {
         });
 
         // Format result for MCP response
+        if (result && typeof result === 'object' && 'content' in (result as any)) {
+          // Pass through structured results (CallToolResult)
+          return result as any;
+        }
+
         if (typeof result === 'string') {
           return {
             content: [
@@ -196,16 +201,16 @@ export class MCPServer implements IMCPServer {
               },
             ],
           };
-        } else {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(result, null, 2),
-              },
-            ],
-          };
         }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
 

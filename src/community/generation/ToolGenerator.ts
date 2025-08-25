@@ -92,7 +92,10 @@ export class ToolGenerator extends EventEmitter {
     return toolSchema;
   }
 
-  private createToolHandler(endpoint: ProtocolEndpoint, protocol: CommunityProtocol): (...args: any[]) => Promise<any> {
+  private createToolHandler(
+    endpoint: ProtocolEndpoint,
+    protocol: CommunityProtocol
+  ): (...args: any[]) => Promise<any> {
     return async (params: Record<string, any> = {}) => {
       try {
         logger.debug(`Executing tool for ${protocol.name}.${endpoint.name}`, { params });
