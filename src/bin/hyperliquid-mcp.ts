@@ -178,7 +178,7 @@ async function createMCPServer() {
   const server = new Server(
     {
       name: 'hl-eco-mcp',
-      version: '0.1.2-alpha',
+      version: '0.1.5-alpha',
     },
     {
       capabilities: {
@@ -190,11 +190,20 @@ async function createMCPServer() {
   // Register all tools from the registry
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const tools = toolRegistry.getTools();
+    console.error(`[MCP DEBUG] Returning ${tools.length} tools to client`);
+    tools.forEach((tool: any) => {
+      console.error(`[MCP DEBUG] Tool: ${tool.name} (${tool.category})`);
+      console.error(`[MCP DEBUG] Tool schema type:`, typeof tool.schema, typeof tool.inputSchema);
+    });
     return {
       tools: tools.map((tool: any) => ({
         name: tool.name,
         description: tool.description,
-        inputSchema: zodToJsonSchema(tool.schema),
+        // Use inputSchema directly if it exists (already in JSON Schema format)
+        // otherwise try to convert from Zod schema
+        inputSchema:
+          tool.inputSchema ||
+          (tool.schema ? zodToJsonSchema(tool.schema) : { type: 'object', properties: {} }),
       })),
     };
   });
