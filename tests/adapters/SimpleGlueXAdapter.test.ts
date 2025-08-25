@@ -98,17 +98,15 @@ describe('SimpleGlueXAdapter', () => {
       ];
 
       mockApiClient.get.mockResolvedValue({
-        success: true,
-        data: mockChains,
-        requestId: 'test-req-1',
-        timestamp: Date.now(),
+        chains: mockChains,
+        liquidityModules: {},
       });
 
       await expect(adapter.initialize()).resolves.not.toThrow();
-      expect(mockApiClient.get).toHaveBeenCalledWith('/chains', {
+      expect(mockApiClient.get).toHaveBeenCalledWith('/liquidity', {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'test-api-key',
+          'x-api-key': 'test-api-key',
         },
       });
     });
@@ -125,10 +123,8 @@ describe('SimpleGlueXAdapter', () => {
       const mockChains: ChainInfo[] = [{ chainId: 1 } as ChainInfo];
 
       mockApiClient.get.mockResolvedValue({
-        success: true,
-        data: mockChains,
-        requestId: 'test-req-1',
-        timestamp: Date.now(),
+        chains: mockChains,
+        liquidityModules: {},
       });
 
       const result = await adapter.validateConnection();
@@ -137,10 +133,8 @@ describe('SimpleGlueXAdapter', () => {
 
     it('should return false for invalid connection', async () => {
       mockApiClient.get.mockResolvedValue({
-        success: true,
-        data: [],
-        requestId: 'test-req-1',
-        timestamp: Date.now(),
+        chains: [],
+        liquidityModules: {},
       });
 
       const result = await adapter.validateConnection();
@@ -156,10 +150,10 @@ describe('SimpleGlueXAdapter', () => {
   });
 
   describe('getEndpointInfo', () => {
-    it('should return correct endpoint info for /chains', () => {
-      const info = adapter.getEndpointInfo('/chains');
+    it('should return correct endpoint info for /liquidity', () => {
+      const info = adapter.getEndpointInfo('/liquidity');
       expect(info).toEqual({
-        path: '/chains',
+        path: '/liquidity',
         method: 'GET',
       });
     });
@@ -198,18 +192,16 @@ describe('SimpleGlueXAdapter', () => {
       ];
 
       mockApiClient.get.mockResolvedValue({
-        success: true,
-        data: mockChains,
-        requestId: 'test-req-1',
-        timestamp: Date.now(),
+        chains: mockChains,
+        liquidityModules: {},
       });
 
       const result = await adapter.getSupportedChains();
       expect(result).toEqual(mockChains);
-      expect(mockApiClient.get).toHaveBeenCalledWith('/chains', {
+      expect(mockApiClient.get).toHaveBeenCalledWith('/liquidity', {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'test-api-key',
+          'x-api-key': 'test-api-key',
         },
       });
     });
@@ -253,7 +245,7 @@ describe('SimpleGlueXAdapter', () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            'X-API-Key': 'test-api-key',
+            'x-api-key': 'test-api-key',
           },
         }
       );
@@ -274,7 +266,7 @@ describe('SimpleGlueXAdapter', () => {
       expect(mockApiClient.get).toHaveBeenCalledWith('/tokens', {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'test-api-key',
+          'x-api-key': 'test-api-key',
         },
       });
     });
@@ -336,7 +328,7 @@ describe('SimpleGlueXAdapter', () => {
       expect(mockApiClient.get).toHaveBeenCalledWith('/tokens/1/0xA0b86a33E6441c8a6b0e6FE0', {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'test-api-key',
+          'x-api-key': 'test-api-key',
         },
       });
     });
@@ -416,7 +408,7 @@ describe('SimpleGlueXAdapter', () => {
       expect(mockApiClient.post).toHaveBeenCalledWith('/quote', routeRequest, {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'test-api-key',
+          'x-api-key': 'test-api-key',
         },
       });
     });
@@ -504,7 +496,7 @@ describe('SimpleGlueXAdapter', () => {
       expect(mockApiClient.post).toHaveBeenCalledWith('/route', txRequest, {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'test-api-key',
+          'x-api-key': 'test-api-key',
         },
       });
     });
@@ -548,7 +540,7 @@ describe('SimpleGlueXAdapter', () => {
       expect(mockApiClient.get).toHaveBeenCalledWith('/status?txHash=0x123&chainId=1', {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'test-api-key',
+          'x-api-key': 'test-api-key',
         },
       });
     });
@@ -613,7 +605,7 @@ describe('SimpleGlueXAdapter', () => {
       expect(mockApiClient.get).toHaveBeenCalledWith('/pools?chainId=1&tokenAddress=0xToken', {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'test-api-key',
+          'x-api-key': 'test-api-key',
         },
       });
     });
@@ -776,7 +768,7 @@ describe('SimpleGlueXAdapter', () => {
         {
           headers: {
             'Content-Type': 'application/json',
-            'X-API-Key': 'test-api-key',
+            'x-api-key': 'test-api-key',
           },
         }
       );
@@ -788,10 +780,8 @@ describe('SimpleGlueXAdapter', () => {
       const mockChains: ChainInfo[] = [{ chainId: 1 } as ChainInfo];
 
       mockApiClient.get.mockResolvedValue({
-        success: true,
-        data: mockChains,
-        requestId: 'test-req-1',
-        timestamp: Date.now(),
+        chains: mockChains,
+        liquidityModules: {},
       });
 
       const result = await adapter.healthCheck(true);
@@ -809,10 +799,8 @@ describe('SimpleGlueXAdapter', () => {
       // Mock successful response
       const mockChains: ChainInfo[] = [{ chainId: 1 } as ChainInfo];
       mockApiClient.get.mockResolvedValue({
-        success: true,
-        data: mockChains,
-        requestId: 'test-req-1',
-        timestamp: Date.now(),
+        chains: mockChains,
+        liquidityModules: {},
       });
 
       // Set a recent lastChecked time to simulate cache
@@ -958,7 +946,7 @@ describe('SimpleGlueXAdapter', () => {
       expect(mockApiClient.get).toHaveBeenCalledWith('/test-endpoint', {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'test-api-key',
+          'x-api-key': 'test-api-key',
         },
       });
     });
@@ -972,7 +960,7 @@ describe('SimpleGlueXAdapter', () => {
       expect(mockApiClient.post).toHaveBeenCalledWith('/test-endpoint', testData, {
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'test-api-key',
+          'x-api-key': 'test-api-key',
         },
       });
     });

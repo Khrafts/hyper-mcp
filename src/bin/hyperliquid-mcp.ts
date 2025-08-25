@@ -149,7 +149,11 @@ async function createMCPServer() {
 
   // Initialize components
   const toolRegistry = new ToolRegistry();
-  const adapterManager = new SimpleAdapterManager(toolRegistry);
+  const adapterManager = new SimpleAdapterManager(toolRegistry, {
+    enableHyperLiquid: true,
+    enableGlueX: !!(config.GLUEX_API_KEY && config.GLUEX_API_KEY !== 'your_gluex_api_key_here'),
+    testnet: config.HYPERLIQUID_TESTNET,
+  });
 
   try {
     // Initialize all adapters and tools

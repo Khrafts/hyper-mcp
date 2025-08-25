@@ -35,7 +35,7 @@ export class SimpleGlueXAdapter extends BaseAdapter {
       description: 'GlueX cross-chain router adapter for DeFi operations',
       protocol: 'REST',
       baseUrl: config.baseUrl,
-      endpoints: ['/chains', '/tokens', '/quote', '/route', '/transaction', '/status'],
+      endpoints: ['/liquidity', '/v1/price', '/v1/quote'],
       rateLimit: {
         requestsPerMinute: 60,
         burstLimit: 20,
@@ -83,8 +83,8 @@ export class SimpleGlueXAdapter extends BaseAdapter {
 
   async initialize(): Promise<void> {
     try {
-      // Test connection with a simple API call
-      await this.getSupportedChains();
+      // Test connection with a simple API call to liquidity endpoint
+      await this.getLiquidityInfo();
       logger.info('GlueX adapter initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize GlueX adapter', { error });
@@ -94,8 +94,13 @@ export class SimpleGlueXAdapter extends BaseAdapter {
 
   async validateConnection(): Promise<boolean> {
     try {
-      const chains = await this.getSupportedChains();
-      return Array.isArray(chains) && chains.length > 0;
+      const liquidityInfo = await this.getLiquidityInfo();
+      return (
+        liquidityInfo &&
+        liquidityInfo.chains &&
+        Array.isArray(liquidityInfo.chains) &&
+        liquidityInfo.chains.length > 0
+      );
     } catch (error) {
       logger.error('Connection validation failed', { error });
       return false;
@@ -104,8 +109,8 @@ export class SimpleGlueXAdapter extends BaseAdapter {
 
   getEndpointInfo(endpoint: string): { path: string; method: string; schema?: z.ZodSchema } {
     const endpoints = {
-      '/chains': {
-        path: '/chains',
+      '/liquidity': {
+        path: '/liquidity',
         method: 'GET',
       },
       '/tokens': {
@@ -160,9 +165,17 @@ export class SimpleGlueXAdapter extends BaseAdapter {
   }
 
   // Chain and Token Methods
+  async getLiquidityInfo(): Promise<{
+    chains: ChainInfo[];
+    liquidityModules: Record<string, unknown>;
+  }> {
+    const response = await this.makeRequest('/liquidity');
+    return response as { chains: ChainInfo[]; liquidityModules: Record<string, unknown> };
+  }
+
   async getSupportedChains(): Promise<ChainInfo[]> {
-    const response = await this.makeRequest('/chains');
-    return (response as GlueXResponse<ChainInfo[]>).data || [];
+    const liquidityInfo = await this.getLiquidityInfo();
+    return liquidityInfo.chains || [];
   }
 
   async getTokens(
@@ -282,9 +295,13 @@ export class SimpleGlueXAdapter extends BaseAdapter {
     const errors: string[] = [];
 
     try {
-      const chains = await this.getSupportedChains();
+      const liquidityInfo = await this.getLiquidityInfo();
       latencyMs = Date.now() - startTime;
-      healthy = Array.isArray(chains) && chains.length > 0;
+      healthy =
+        liquidityInfo &&
+        liquidityInfo.chains &&
+        Array.isArray(liquidityInfo.chains) &&
+        liquidityInfo.chains.length > 0;
     } catch (error) {
       errors.push(error instanceof Error ? error.message : 'Unknown error');
     }
@@ -317,7 +334,7 @@ export class SimpleGlueXAdapter extends BaseAdapter {
       };
 
       if (this.apiKey) {
-        headers['X-API-Key'] = this.apiKey;
+        headers['x-api-key'] = this.apiKey;
       }
 
       if (method === 'GET') {

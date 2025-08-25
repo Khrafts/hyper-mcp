@@ -1,7 +1,7 @@
 # gluex_health_check
 
 Description
-Check GlueX adapter health and connectivity.
+Check GlueX router adapter health and connectivity. Tests connection to the GlueX router endpoint and validates API access.
 
 Category
 gluex

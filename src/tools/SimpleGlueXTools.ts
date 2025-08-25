@@ -18,7 +18,8 @@ export class SimpleGlueXTools {
     return [
       {
         name: 'gluex_get_supported_chains',
-        description: 'Get all supported blockchain networks on GlueX',
+        description:
+          'Get all supported blockchain networks and liquidity modules from GlueX router',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -296,7 +297,7 @@ export class SimpleGlueXTools {
       },
       {
         name: 'gluex_health_check',
-        description: 'Check the health and connectivity of GlueX adapter',
+        description: 'Check the health and connectivity of GlueX router adapter',
         inputSchema: {
           type: 'object',
           properties: {},

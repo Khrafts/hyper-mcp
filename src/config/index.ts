@@ -18,7 +18,7 @@ const ConfigSchema = z.object({
   HYPERLIQUID_TESTNET: z.coerce.boolean().default(false),
 
   // GlueX Configuration
-  GLUEX_API_BASE_URL: z.string().default('https://api.gluex.org/v1'),
+  GLUEX_API_BASE_URL: z.string().default('https://router.gluex.xyz'),
   GLUEX_API_KEY: z.string().optional(),
 
   // Node Info API Configuration

@@ -2,8 +2,8 @@
 
 Overview
 
-- Base URL: GLUEX_API_BASE_URL (default https://api.gluex.org/v1)
-- Authentication: Bearer token (GLUEX_API_KEY)
+- Base URL: GLUEX_API_BASE_URL (default https://router.gluex.xyz)
+- Authentication: x-api-key header (GLUEX_API_KEY)
 
 Capabilities
 

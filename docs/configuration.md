@@ -18,8 +18,8 @@ HyperLiquid
 
 GlueX
 
-- GLUEX_API_BASE_URL: default https://api.gluex.org/v1
-- GLUEX_API_KEY: optional, bearer token
+- GLUEX_API_BASE_URL: default https://router.gluex.xyz
+- GLUEX_API_KEY: optional, x-api-key header for router access
 
 Node Info API
 
@@ -74,7 +74,7 @@ HYPERLIQUID_SECRET_KEY=0xYOUR_PRIVATE_KEY
 HYPERLIQUID_USER_ADDRESS=0xYOUR_ADDRESS
 
 # GlueX (optional)
-GLUEX_API_BASE_URL=https://api.gluex.org/v1
+GLUEX_API_BASE_URL=https://router.gluex.xyz
 GLUEX_API_KEY=your_gluex_api_key
 
 # Node Info (optional)
