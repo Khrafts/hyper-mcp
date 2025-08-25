@@ -2,24 +2,21 @@
 
 All settings are managed via environment variables, validated by Zod in src/config/index.ts. Copy .env.example to .env and adjust as needed.
 
+**Note**: GlueX integration has been removed. The server now focuses on HyperLiquid trading and community protocol contributions.
+
 Server
 
 - NODE_ENV: development | production | test (default: development)
 - LOG_LEVEL: error | warn | info | debug (default: info)
 - MCP_SERVER_PORT: number (default: 3000)
 
-HyperLiquid
+HyperLiquid (Required for Trading)
 
-- HYPERLIQUID_API_BASE_URL: default https://api.hyperliquid.xyz
-- HYPERLIQUID_WS_URL: default wss://api.hyperliquid.xyz/ws
-- HYPERLIQUID_API_KEY: optional, for private endpoints
-- HYPERLIQUID_SECRET_KEY: optional, required for order placement
-- HYPERLIQUID_USER_ADDRESS: optional, defaults to configured address for account queries
-
-GlueX
-
-- GLUEX_API_BASE_URL: default https://router.gluex.xyz
-- GLUEX_API_KEY: optional, x-api-key header for router access
+- **HYPERLIQUID_API_BASE_URL**: default https://api.hyperliquid.xyz
+- **HYPERLIQUID_WS_URL**: default wss://api.hyperliquid.xyz/ws
+- **HYPERLIQUID_PRIVATE_KEY**: **Required** for trading - your wallet private key
+- **HYPERLIQUID_USER_ADDRESS**: **Required** for trading - your wallet address
+- **HYPERLIQUID_TESTNET**: set to 'true' for testnet (recommended for development)
 
 Node Info API
 
@@ -43,17 +40,18 @@ Performance and caching
 - CACHE_TTL_SECONDS: default 60
 - MAX_CONCURRENT_REQUESTS: default 10
 
-Community system (optional)
+Community Protocol System (Optional)
 
-- ENABLE_COMMUNITY_SYSTEM: default false
-- GITHUB_TOKEN, GITHUB_WEBHOOK_SECRET: optional
-- COMMUNITY_REPOSITORY: default hyperliquid-intelligence/community-protocols
-- COMMUNITY_AUTO_MERGE: default false
-- COMMUNITY_MAX_ENDPOINTS: default 10
-- COMMUNITY_STRICT_MODE: default true
-- COMMUNITY_CACHE_TTL_MS: default 3600000
-- COMMUNITY_VALIDATION_TIMEOUT_MS: default 30000
-- COMMUNITY_ALLOWED_DOMAINS: optional, comma-separated
+- **ENABLE_COMMUNITY_SYSTEM**: default false - enables community protocol loading
+- **GITHUB_TOKEN**: optional - for GitHub PR workflow integration
+- **GITHUB_WEBHOOK_SECRET**: optional - for GitHub webhook validation
+- **COMMUNITY_REPOSITORY**: default 'hyperliquid-intelligence/community-protocols'
+- **COMMUNITY_AUTO_MERGE**: default false - auto-merge valid protocol PRs
+- **COMMUNITY_MAX_ENDPOINTS**: default 10 - max endpoints per protocol
+- **COMMUNITY_STRICT_MODE**: default true - strict validation mode
+- **COMMUNITY_CACHE_TTL_MS**: default 3600000 (1 hour) - protocol cache TTL
+- **COMMUNITY_VALIDATION_TIMEOUT_MS**: default 30000 - validation timeout
+- **COMMUNITY_ALLOWED_DOMAINS**: optional - comma-separated list of allowed API domains
 
 Development
 
@@ -63,19 +61,21 @@ Development
 Examples
 
 ```
-# Minimum env for public market data
+# Minimum configuration for market data only
 LOG_LEVEL=info
 MCP_SERVER_PORT=3000
 HYPERLIQUID_API_BASE_URL=https://api.hyperliquid.xyz
 HYPERLIQUID_WS_URL=wss://api.hyperliquid.xyz/ws
 
-# Enable trading
-HYPERLIQUID_SECRET_KEY=0xYOUR_PRIVATE_KEY
-HYPERLIQUID_USER_ADDRESS=0xYOUR_ADDRESS
+# Enable trading (REQUIRED for trading tools)
+HYPERLIQUID_PRIVATE_KEY=0xYOUR_WALLET_PRIVATE_KEY
+HYPERLIQUID_USER_ADDRESS=0xYOUR_WALLET_ADDRESS
+HYPERLIQUID_TESTNET=true  # Use testnet for development
 
-# GlueX (optional)
-GLUEX_API_BASE_URL=https://router.gluex.xyz
-GLUEX_API_KEY=your_gluex_api_key
+# Community protocol system (optional)
+ENABLE_COMMUNITY_SYSTEM=true
+COMMUNITY_MAX_ENDPOINTS=20
+COMMUNITY_STRICT_MODE=true
 
 # Node Info (optional)
 NODE_INFO_API_BASE_URL=https://api.nodeinfo.hyperliquid.xyz

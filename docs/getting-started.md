@@ -1,12 +1,13 @@
 # Getting Started
 
-This guide helps you install, configure, and run HyperLiquid Intelligence MCP locally and via Docker.
+This guide helps you install, configure, and run the HyperLiquid Ecosystem MCP Server locally and via Docker.
 
 Prerequisites
 
 - Node.js 18+ and pnpm
 - Optional: Docker and Docker Compose
-- Optional: API keys for HyperLiquid and GlueX
+- HyperLiquid wallet credentials (private key and address)
+- Optional: Community protocol contributions
 
 Install
 
@@ -76,6 +77,7 @@ pnpm test
 
 Next steps
 
-- Configure environment variables: configuration.md
-- Explore tools and integrations: tools/overview.md, integrations/README.md
-- Operations and deployment: operations/README.md
+- **Configure your wallet**: Set up HyperLiquid credentials in configuration.md
+- **Explore available tools**: See tools/overview.md for HyperLiquid and community tools
+- **Contribute protocols**: Add your API as a community protocol (see CONTRIBUTING.md)
+- **Deploy in production**: Follow operations/README.md for deployment guidance

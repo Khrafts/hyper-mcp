@@ -1,19 +1,21 @@
-# HyperLiquid Intelligence MCP
+# HyperLiquid Ecosystem MCP Server
 
-A professional AI Agent Gateway for the Hyperliquid ecosystem, exposing powerful Model Context Protocol (MCP) tools for market data, trading, cross-chain orchestration, and network insights.
+A community-driven AI Agent Gateway for the HyperLiquid ecosystem, enabling automatic tool generation from community-contributed protocol definitions. Transform any API into MCP tools that AI agents can use seamlessly.
 
 Highlights
 
-- Modular architecture with adapters for HyperLiquid, GlueX Router, and Node Info
-- Smart execution and risk management engines
-- Strict validation, rate limiting, retries, and structured logging
-- Community system for dynamic protocol contributions (optional)
+- **Community Protocol System** - JSON protocol definitions automatically become MCP tools
+- **HyperLiquid Trading Integration** - Complete trading, market data, and risk management
+- **Automatic Tool Generation** - No code required, just submit protocol definitions
+- **Modular Architecture** - Built-in validation, rate limiting, and structured logging
+- **Developer Friendly** - Easy contribution workflow via GitHub PRs
 
 Who is this for?
 
-- Users integrating AI agents (Claude/LLMs) with Hyperliquid trading and data
-- Developers extending the server with tools, adapters, and analytics
-- Operators deploying and monitoring a secure, resilient MCP server
+- **AI Agent Users** - Integrate Claude/LLMs with HyperLiquid and ecosystem projects
+- **Protocol Developers** - Contribute your API as a community protocol for AI agents
+- **DeFi Builders** - Extend ecosystem tooling without writing MCP server code
+- **Operators** - Deploy and monitor a secure, community-driven MCP server
 
 Quick links
 

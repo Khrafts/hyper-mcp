@@ -1,13 +1,26 @@
 # Integrations
 
-This section covers the first-class adapters bundled with Hyper MCP.
+This section covers the built-in integrations and community protocol system.
 
-- HyperLiquid: Market data, orders, account state, WebSocket feeds.
-- GlueX Router: Cross-chain quotes, routes, and bridge execution.
-- Node Info (optional): Network and node health insights.
+## Built-in Integrations
 
-See:
+- **HyperLiquid**: Complete DEX integration - market data, trading, account management, WebSocket feeds
+- **Node Info** (optional): Network and validator health insights
 
-- HyperLiquid: hyperliquid.md
-- GlueX: gluex.md
-- Node Info: node-info.md
+## Community Protocol System
+
+- **Dynamic Protocol Loading**: JSON protocol definitions automatically become MCP tools
+- **Ecosystem Integration**: Any REST API can be integrated via community contributions
+- **Validation & Security**: Automatic validation, rate limiting, and security checks
+
+## Documentation
+
+- **HyperLiquid Integration**: [hyperliquid.md](hyperliquid.md)
+- **Node Info Integration**: [node-info.md](node-info.md)
+- **Community Protocols**: [CONTRIBUTING.md](../../CONTRIBUTING.md) - How to contribute protocols
+
+## Getting Started
+
+1. **For Trading**: Configure HyperLiquid credentials in your environment
+2. **For Protocol Contributors**: Submit JSON protocol definitions via GitHub PRs
+3. **For Developers**: Extend the server with custom adapters or validation logic

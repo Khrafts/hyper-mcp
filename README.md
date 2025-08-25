@@ -2,7 +2,7 @@
 
 > Transform any AI agent into a HyperLiquid trading powerhouse! 🚀
 
-**hl-eco-mcp** is a Model Context Protocol (MCP) server that provides comprehensive AI integration for the HyperLiquid DEX ecosystem. Compatible with Claude Desktop, Cursor, and any MCP-enabled application.
+**hl-eco-mcp** is a community-driven Model Context Protocol (MCP) server that provides comprehensive AI integration for the HyperLiquid DEX ecosystem. Any protocol can contribute their API via simple JSON definitions that automatically become AI-accessible tools. Compatible with Claude Desktop, Cursor, and any MCP-enabled application.
 
 ## 🌟 Features
 
@@ -81,11 +81,41 @@ The server provides 32+ MCP tools across these categories:
 
 ## 🤝 Contributing
 
-This is an open-source public good! Contributions welcome:
+This is a community-driven project! Multiple ways to contribute:
 
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
+### 🎯 Protocol Contributors (Most Common)
+
+1. **Create a Protocol**: Define your API in a simple JSON file
+2. **Submit PR**: Add to `protocols/your-protocol.json`
+3. **Automatic Tools**: Your API becomes MCP tools instantly!
+
+### 👨‍💻 Core Development
+
+1. **Fork** the repository
+2. **Create** a feature branch for core improvements
+3. **Submit** a pull request
+
+### 📖 Community Protocol Demo
+
+```json
+{
+  "name": "my-defi-protocol",
+  "version": "1.0.0",
+  "description": "My DeFi protocol API for AI agents",
+  "endpoints": [
+    {
+      "name": "getPoolInfo",
+      "method": "GET",
+      "path": "https://api.myprotocol.com/pools/{poolId}",
+      "description": "Get liquidity pool information"
+    }
+  ]
+}
+```
+
+**Result**: Automatic `my_defi_protocol_getPoolInfo` MCP tool for AI agents!
+
+See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for the complete protocol contribution guide.
 
 ## 📄 License
 

@@ -5,8 +5,8 @@ This section explains the architecture and development workflow for contributors
 Architecture
 
 - Server core: src/server (MCPServer, ToolRegistry, SessionManager)
-- Adapters: src/adapters (HyperLiquid, GlueX, Node Info)
-- Tools: src/tools (SimpleHyperLiquidTools, SimpleGlueXTools, NodeInfoTools, Execution, Risk)
+- **HyperLiquid Integration**: `src/adapters/hyperliquid`, `src/tools` (trading, execution, risk)
+- **Community System**: `src/community` (protocol loading, validation, tool generation)
 - Utilities: src/utils (ApiClient, RateLimiter, logger)
 - WebSocket: src/websocket
 - Optional community: src/community
@@ -34,12 +34,28 @@ cp .env.example .env
 pnpm run dev
 ```
 
-Adding a new tool
+## Contributing
 
-1. Implement handler and input schema
-2. Register in the appropriate register\*Tools in SimpleAdapterManager
-3. Ensure validation and error handling
-4. Document the tool under docs/tools/
+### Adding HyperLiquid Tools
+
+1. Implement handler and input schema in appropriate tools file
+2. Register in `SimpleAdapterManager.registerXXXTools()`
+3. Add validation and error handling
+4. Document the tool under `docs/tools/`
+
+### Contributing Community Protocols
+
+1. Create JSON protocol definition (see `CONTRIBUTING.md`)
+2. Submit PR to protocols repository
+3. Automatic validation and tool generation
+4. No code changes required!
+
+### Extending the Community System
+
+1. **Validation**: Extend `src/community/validation/`
+2. **Loading**: Modify `src/community/loading/`
+3. **Generation**: Enhance `src/community/generation/`
+4. **GitHub Integration**: Update `src/community/github/`
 
 Testing
 

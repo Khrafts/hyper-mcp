@@ -1,6 +1,25 @@
-# Contributing to HyperMCP Community Protocols
+# Contributing to HyperLiquid Ecosystem MCP Server
 
-Thank you for your interest in contributing to the HyperMCP Community Protocol ecosystem! This document provides guidelines and information for creating, submitting, and maintaining community protocols.
+Thank you for your interest in contributing to the HyperLiquid Ecosystem MCP Server! The server now focuses exclusively on **community-driven protocol contributions** that automatically become AI-accessible tools.
+
+## 🎯 What's New
+
+The HyperLiquid MCP Server has pivoted to be **100% community-focused**:
+
+- **No Code Required**: JSON protocol definitions automatically become MCP tools
+- **Ecosystem Growth**: Any DeFi protocol, data provider, or service can contribute
+- **AI-Native**: Built specifically for AI agents like Claude to use seamlessly
+- **Automatic Generation**: Submit a protocol, get working MCP tools instantly
+
+## 🚀 Contributing Options
+
+1. **Protocol Contributors**: Add your API as a community protocol (most common)
+2. **Core Developers**: Improve the community system, validation, or tool generation
+3. **Documentation**: Help improve guides, examples, and tutorials
+
+---
+
+This document provides guidelines and information for creating, submitting, and maintaining community protocols.
 
 ## Table of Contents
 
@@ -86,17 +105,20 @@ A community protocol is a JSON file that describes how to interact with an exter
 ### Installation
 
 1. Clone your fork:
+
 ```bash
 git clone https://github.com/your-username/hyper-mcp.git
 cd hyper-mcp
 ```
 
 2. Install dependencies:
+
 ```bash
 pnpm install
 ```
 
 3. Run tests to ensure everything is working:
+
 ```bash
 pnpm test
 ```
@@ -131,7 +153,7 @@ const protocol = createProtocol()
       )
       .setResponse({
         type: 'object',
-        description: 'API response'
+        description: 'API response',
       })
       .build()
   )
@@ -210,7 +232,7 @@ Supported authentication types:
 
 // API Key in Query
 {
-  type: 'api_key', 
+  type: 'api_key',
   location: 'query',
   name: 'api_key'
 }
@@ -248,6 +270,7 @@ Protect APIs with rate limiting:
 All protocols must pass our validation system before acceptance:
 
 ### Schema Validation
+
 - ✅ Valid JSON structure
 - ✅ All required fields present
 - ✅ Proper data types
@@ -255,6 +278,7 @@ All protocols must pass our validation system before acceptance:
 - ✅ Unique protocol name
 
 ### Business Logic Validation
+
 - ✅ Maximum 50 endpoints per protocol
 - ✅ No duplicate endpoint names
 - ✅ No duplicate path/method combinations
@@ -262,12 +286,14 @@ All protocols must pass our validation system before acceptance:
 - ✅ Consistent authentication configuration
 
 ### Security Validation
+
 - ✅ HTTPS URLs only
 - ✅ No sensitive data in URL paths
 - ⚠️ Authentication configuration recommended
 - ⚠️ Rate limiting configuration recommended
 
 ### Performance Validation
+
 - ✅ Reasonable rate limits
 - ✅ Appropriate timeout values
 - ✅ Efficient parameter structures
@@ -313,6 +339,7 @@ protocols/
 ### 3. Create Pull Request
 
 1. **Commit Changes**:
+
 ```bash
 git add protocols/your-protocol-name.json
 git commit -m "Add your-protocol-name protocol"
@@ -326,13 +353,16 @@ git push origin feature/your-protocol-name
    - Reference any related issues
 
 3. **PR Template**:
+
 ```markdown
 ## Protocol Submission: Your Protocol Name
 
 ### Description
+
 Brief description of what your protocol does and why it's useful.
 
 ### Checklist
+
 - [ ] Protocol passes validation
 - [ ] Documentation included
 - [ ] Examples provided
@@ -340,9 +370,11 @@ Brief description of what your protocol does and why it's useful.
 - [ ] Follows naming conventions
 
 ### Testing
+
 Describe how you've tested your protocol.
 
 ### Additional Notes
+
 Any additional information reviewers should know.
 ```
 
@@ -387,12 +419,12 @@ describe('MyProtocol Integration', () => {
   it('should successfully call the real API', async () => {
     const protocol = loadProtocol('my-protocol.json');
     const tools = await generator.generateTools(protocol);
-    
+
     const result = await tools[0].handler({
       apiKey: process.env.TEST_API_KEY,
-      limit: 10
+      limit: 10,
     });
-    
+
     expect(result).toBeDefined();
   });
 });
@@ -463,7 +495,7 @@ Here's a complete example of a well-structured protocol:
   "endpoints": [
     {
       "name": "getCurrentWeather",
-      "method": "GET", 
+      "method": "GET",
       "path": "/weather",
       "description": "Get current weather data for a specific location",
       "parameters": [
@@ -476,7 +508,7 @@ Here's a complete example of a well-structured protocol:
         },
         {
           "name": "units",
-          "type": "string", 
+          "type": "string",
           "description": "Units of measurement",
           "required": false,
           "default": "metric",
@@ -493,7 +525,7 @@ Here's a complete example of a well-structured protocol:
             "required": true
           },
           "weather": {
-            "type": "array", 
+            "type": "array",
             "description": "Weather condition details",
             "required": true
           }
@@ -537,6 +569,7 @@ We are committed to providing a welcoming and inclusive environment. Please:
 ### Recognition
 
 Contributors are recognized in:
+
 - Protocol author fields
 - Repository contributors list
 - Release notes and changelogs
@@ -556,22 +589,26 @@ If you need assistance:
 ### Common Issues
 
 **Validation Failures**:
+
 - Check required fields are present
 - Verify JSON syntax is valid
 - Ensure parameter types match definitions
 - Validate endpoint paths and methods
 
 **Authentication Issues**:
+
 - Verify authentication configuration
 - Test with valid credentials
 - Check parameter names match API requirements
 
 **Rate Limiting**:
+
 - Set reasonable rate limits
 - Consider burst allowances
 - Test with actual API rate limits
 
 **Schema Errors**:
+
 - Follow parameter definition requirements
 - Use proper data types
 - Include required properties for objects
@@ -579,7 +616,7 @@ If you need assistance:
 ### Resources
 
 - **SDK Documentation**: Complete TypeScript SDK reference
-- **Protocol Examples**: Sample protocols for common use cases  
+- **Protocol Examples**: Sample protocols for common use cases
 - **API Reference**: Detailed API documentation
 - **Migration Guide**: Upgrading protocols between versions
 - **Troubleshooting**: Common issues and solutions

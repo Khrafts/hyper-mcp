@@ -17,7 +17,7 @@ Least privilege
 Hardening
 
 - Keep dependencies updated
-- Enable only the adapters you need (disable GlueX/NodeInfo via env if not used)
+- Enable only the features you need (disable NodeInfo or Community System via env if not used)
 - Monitor for abnormal rates/errors; backoff protects upstreams
 
 Validation and sanitization
