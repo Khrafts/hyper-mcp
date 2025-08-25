@@ -1,235 +1,104 @@
-# HyperLiquid Intelligence MCP
+# HyperLiquid MCP Server
 
-> ⚠️ **ALPHA SOFTWARE**: This project is in early development. APIs may change. Not recommended for production use.
+> Transform any AI agent into a HyperLiquid trading powerhouse! 🚀
 
-An MCP (Model Context Protocol) server for advanced trading operations on HyperLiquid DEX, featuring market intelligence, risk management, and automated execution capabilities.
+**hl-eco-mcp** is a Model Context Protocol (MCP) server that provides comprehensive AI integration for the HyperLiquid DEX ecosystem. Compatible with Claude Desktop, Cursor, and any MCP-enabled application.
 
-## Features
+## 🌟 Features
 
-### Current (v0.1.0-alpha)
+- **🎯 Full HyperLiquid Integration** - Complete access to all HyperLiquid trading functionality
+- **🤖 AI-Native Design** - Purpose-built for AI agents with natural language interfaces
+- **⚡ Real-Time Data** - Live market data, order book updates, and position monitoring
+- **🛡️ Advanced Risk Management** - Built-in position limits, drawdown monitoring, and alerts
+- **🌉 Cross-Chain Support** - GlueX integration for multi-chain operations
+- **📊 Market Intelligence** - Technical analysis, sentiment data, and smart execution
+- **🔧 Easy Setup** - One command installation with comprehensive documentation
 
-- ✅ MCP server infrastructure with tool registry
-- ✅ Market data fetching from HyperLiquid
-- ✅ Technical indicators (SMA, EMA, RSI, MACD, Bollinger Bands)
-- ✅ Risk management calculations (VaR, position sizing)
-- ✅ Basic execution algorithms (TWAP, VWAP)
-- ✅ Protocol adapter framework
-
-### Upcoming
-
-- 🚧 Full HyperLiquid authentication
-- 🚧 WebSocket real-time data feeds
-- 🚧 Advanced order types (stop-loss, take-profit)
-- 🚧 Cross-chain integration via GlueX
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- pnpm 8+
-- Docker & Docker Compose (optional)
+## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/hyper-mcp.git
-cd hyper-mcp
-
-# Install dependencies
-pnpm install
-
-# Build the project
-pnpm build
-
-# Run tests
-pnpm test
+npm install -g hl-eco-mcp
 ```
 
-### Configuration
-
-1. Copy the environment template:
+### Setup Environment Variables
 
 ```bash
-cp .env.example .env
+export HYPERLIQUID_PRIVATE_KEY="0x1234567890abcdef..."
+export HYPERLIQUID_USER_ADDRESS="0xYourWalletAddress"
+export HYPERLIQUID_TESTNET="true"  # Start with testnet
 ```
 
-2. Configure your environment variables:
+### Claude Desktop Configuration
 
-```env
-NODE_ENV=development
-LOG_LEVEL=info
+Add to your `claude_desktop_config.json`:
 
-# HyperLiquid Configuration (optional for market data)
-HYPERLIQUID_API_URL=https://api.hyperliquid.xyz
-HYPERLIQUID_WS_URL=wss://api.hyperliquid.xyz/ws
-HYPERLIQUID_PRIVATE_KEY=your_private_key_here  # Required for trading
-HYPERLIQUID_ADDRESS=your_wallet_address_here   # Required for trading
-HYPERLIQUID_TESTNET=false
-
-# Redis Configuration (optional)
-REDIS_URL=redis://localhost:6379
+```json
+{
+  "mcpServers": {
+    "hyperliquid": {
+      "command": "hl-eco-mcp",
+      "env": {
+        "HYPERLIQUID_PRIVATE_KEY": "your_private_key_here",
+        "HYPERLIQUID_USER_ADDRESS": "your_address_here",
+        "HYPERLIQUID_TESTNET": "true"
+      }
+    }
+  }
+}
 ```
 
-### Running the Server
-
-#### Development Mode
-
-```bash
-pnpm dev
-```
-
-#### Production Mode
-
-```bash
-pnpm start
-```
-
-#### Using Docker
-
-```bash
-# Build and run with Docker Compose
-docker-compose up
-
-# Run in background
-docker-compose up -d
-```
-
-## Usage
-
-The MCP server exposes tools that can be used by AI assistants. Connect your MCP client to `http://localhost:3000`.
-
-### Available Tools
-
-#### Market Data
-
-- `hyperliquid_get_markets` - Fetch all market mid prices
-- `hyperliquid_get_orderbook` - Get order book for a symbol
-- `hyperliquid_get_trades` - Get recent trades
-- `hyperliquid_get_candles` - Get historical candles
-
-#### Technical Analysis
-
-- `calculate_sma` - Simple Moving Average
-- `calculate_ema` - Exponential Moving Average
-- `calculate_rsi` - Relative Strength Index
-- `calculate_macd` - MACD indicator
-- `calculate_bollinger_bands` - Bollinger Bands
-
-#### Risk Management
-
-- `calculate_var` - Value at Risk
-- `calculate_position_size` - Kelly Criterion position sizing
-- `analyze_portfolio_risk` - Portfolio risk metrics
-
-#### Execution (requires authentication)
-
-- `place_limit_order` - Place a limit order
-- `place_market_order` - Place a market order
-- `cancel_order` - Cancel an open order
-- `get_open_orders` - List open orders
-
-## Architecture
+### Start Trading with AI
 
 ```
-hyper-mcp/
-├── src/
-│   ├── server/          # MCP server implementation
-│   ├── adapters/        # Protocol adapters (HyperLiquid, GlueX)
-│   ├── tools/           # MCP tool implementations
-│   ├── indicators/      # Technical analysis
-│   ├── risk/            # Risk management
-│   ├── execution/       # Execution algorithms
-│   └── websocket/       # WebSocket managers
-├── tests/               # Test suites
-├── doc/                 # Documentation
-└── docker/              # Docker configuration
+Ask Claude: "Check my HyperLiquid account balance and show my current positions"
+Ask Claude: "Place a buy order for 0.1 BTC at $45,000 with stop-loss at $43,000"
+Ask Claude: "Analyze the ETH market and recommend a trading strategy"
 ```
 
-## Development
+## 🛠️ Available Tools
 
-### Running Tests
+The server provides 32+ MCP tools across these categories:
 
-```bash
-# Run all tests
-pnpm test
+- **HyperLiquid Trading** - Orders, positions, account management
+- **Market Data** - Real-time prices, order books, trade history
+- **Risk Management** - Portfolio analysis, risk limits, alerts
+- **Market Intelligence** - Technical analysis, sentiment data
+- **Smart Execution** - TWAP, VWAP, iceberg orders
+- **Cross-Chain** - GlueX bridging and multi-chain operations
 
-# Run with coverage
-pnpm test:coverage
+## 📖 Documentation
 
-# Run specific test file
-pnpm test tests/adapters/SimpleHyperLiquidAdapter.test.ts
-```
+- **[Installation Guide](./INSTALL.md)** - Detailed setup instructions
+- **[API Reference](./docs/)** - Complete tool documentation
+- **[Examples](./examples/)** - Usage examples and tutorials
 
-### Linting
+## 🔒 Security
 
-```bash
-# Run ESLint
-pnpm lint
+- Never commit private keys to version control
+- Use testnet for development and testing
+- Consider hardware wallets for mainnet trading
+- Monitor API access and permissions regularly
 
-# Fix lint issues
-pnpm lint:fix
-```
+## 🤝 Contributing
 
-### Type Checking
+This is an open-source public good! Contributions welcome:
 
-```bash
-# Run TypeScript compiler check
-pnpm typecheck
-```
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
 
-## Roadmap
+## 📄 License
 
-See [doc/production-readiness-plan.md](doc/production-readiness-plan.md) for detailed development phases.
+MIT License - see [LICENSE](LICENSE) file for details.
 
-### Phase 1 (Current Sprint)
+## 🆘 Support
 
-- [ ] Fix HyperLiquid authentication
-- [ ] Complete WebSocket integration
-- [ ] Add integration tests
+- 📚 [Documentation](./docs/)
+- 🐛 [Issues](https://github.com/khrafts/hyper-mcp/issues)
+- 💬 [Discussions](https://github.com/khrafts/hyper-mcp/discussions)
 
-### Phase 2
+---
 
-- [ ] Full HyperLiquid adapter
-- [ ] Performance optimization (<100ms latency)
-- [ ] Advanced risk management
-
-### Phase 3
-
-- [ ] Security hardening
-- [ ] High availability setup
-- [ ] Production monitoring
-
-## Known Issues
-
-- WebSocket connections not yet implemented
-- Authentication signatures need updating for HyperLiquid format
-- No integration tests yet
-- TypeScript `any` warnings (non-critical)
-
-## Contributing
-
-This project is in alpha. We welcome feedback and contributions! Please open an issue before submitting PRs for major changes.
-
-## Security
-
-⚠️ **IMPORTANT**:
-
-- Never commit private keys or sensitive data
-- Use environment variables for all credentials
-- This is alpha software - use at your own risk
-- Start with testnet before using mainnet
-
-## License
-
-MIT
-
-## Support
-
-- GitHub Issues: [Report bugs or request features](https://github.com/khrafts/hyper-mcp/issues)
-- Documentation: [docs/](docs/)
-
-## Disclaimer
-
-This software is provided "as is" without warranty of any kind. Trading cryptocurrencies carries significant risk. Always do your own research and never trade more than you can afford to lose.
+**Ready to trade with AI?** Install `hl-eco-mcp` now and transform your AI agent into a HyperLiquid trading expert! 💪

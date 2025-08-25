@@ -8,6 +8,7 @@ const projectRoot = join(__dirname, '..');
 
 async function build() {
   try {
+    // Build main index.js
     await esbuild.build({
       entryPoints: [join(projectRoot, 'src/index.ts')],
       bundle: true,
@@ -18,10 +19,24 @@ async function build() {
       minify: false,
       sourcemap: true,
       external: ['@modelcontextprotocol/sdk', 'ws', 'axios', 'winston'],
+    });
+
+    // Build CLI binary
+    await esbuild.build({
+      entryPoints: [join(projectRoot, 'src/bin/hyperliquid-mcp.ts')],
+      bundle: true,
+      outfile: join(projectRoot, 'dist/bin/hyperliquid-mcp.js'),
+      platform: 'node',
+      target: 'node18',
+      format: 'esm',
+      minify: false,
+      sourcemap: true,
+      external: ['@modelcontextprotocol/sdk', 'ws', 'axios', 'winston', 'ethers', 'zod', 'dotenv'],
       banner: {
         js: '#!/usr/bin/env node',
       },
     });
+
     console.log('Build completed successfully');
   } catch (error) {
     console.error('Build failed:', error);
