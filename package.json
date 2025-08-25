@@ -1,6 +1,6 @@
 {
   "name": "hyperliquid-intelligence-mcp",
-  "version": "1.0.0",
+  "version": "0.1.0-alpha",
   "description": "HyperLiquid Intelligence MCP - AI Agent Gateway for the Hyperliquid ecosystem",
   "main": "dist/index.js",
   "type": "module",
