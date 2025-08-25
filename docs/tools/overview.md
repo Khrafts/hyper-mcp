@@ -15,8 +15,14 @@ Core categories
 Quick reference
 
 - HyperLiquid tools: ../integrations/hyperliquid.md
+  - Per-tool: hyperliquid/\*.md
 - GlueX tools: ../integrations/gluex.md
+  - Per-tool: gluex/\*.md
 - Node Info: ../integrations/node-info.md
+  - Per-tool: node-info/\*.md
 - Execution tools: execution.md
+  - Per-tool: execution/\*.md
 - Risk tools: risk-management.md
+  - Per-tool: risk-management/\*.md
 - Market Intelligence: market-intelligence.md
+  - Per-tool: market-intelligence/\*.md
