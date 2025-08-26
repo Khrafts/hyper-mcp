@@ -121,6 +121,7 @@ export class ApiClient {
         keepAlive: config.keepAlive !== false,
         maxSockets: config.maxConnections || 20,
         maxFreeSockets: Math.floor((config.maxConnections || 20) / 10),
+        family: 4, // Force IPv4 to avoid connection issues
       }),
       validateStatus: (status) => status < 500, // Don't throw for 4xx errors
     });

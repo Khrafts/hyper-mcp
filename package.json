@@ -1,6 +1,6 @@
 {
   "name": "hl-eco-mcp",
-  "version": "0.1.6-alpha",
+  "version": "0.1.8-alpha",
   "description": "HyperLiquid MCP Server - AI Agent Gateway for the HyperLiquid DEX ecosystem",
   "main": "dist/index.js",
   "bin": {

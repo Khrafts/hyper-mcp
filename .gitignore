@@ -8,6 +8,7 @@ pnpm-debug.log*
 # Build outputs
 dist/
 build/
+bin/
 *.tsbuildinfo
 
 # Runtime data

@@ -102,23 +102,23 @@ function validateEnvironment() {
 
   const config = getConfig();
 
-  // Check required credentials
-  if (
-    !config.HYPERLIQUID_PRIVATE_KEY ||
-    config.HYPERLIQUID_PRIVATE_KEY === 'your_private_key_here'
-  ) {
-    console.error('❌ HYPERLIQUID_PRIVATE_KEY is required');
-    console.error('   Set your wallet private key in the environment');
-    return null;
+  // Private key is only required for write operations
+  // Read-only operations can proceed without it
+  const hasPrivateKey =
+    config.HYPERLIQUID_PRIVATE_KEY && config.HYPERLIQUID_PRIVATE_KEY !== 'your_private_key_here';
+
+  const hasAddress =
+    config.HYPERLIQUID_USER_ADDRESS &&
+    config.HYPERLIQUID_USER_ADDRESS !== 'your_wallet_address_here';
+
+  if (!hasPrivateKey) {
+    console.warn('⚠️  HYPERLIQUID_PRIVATE_KEY not configured');
+    console.warn('   Running in read-only mode (no trading operations available)');
   }
 
-  if (
-    !config.HYPERLIQUID_USER_ADDRESS ||
-    config.HYPERLIQUID_USER_ADDRESS === 'your_wallet_address_here'
-  ) {
-    console.error('❌ HYPERLIQUID_USER_ADDRESS is required');
-    console.error('   Set your wallet address in the environment');
-    return null;
+  if (!hasAddress) {
+    console.warn('⚠️  HYPERLIQUID_USER_ADDRESS not configured');
+    console.warn('   Account-specific operations will not be available');
   }
 
   return config;
@@ -131,9 +131,25 @@ function displayStartupInfo(config: ReturnType<typeof getConfig>) {
   const network = config.HYPERLIQUID_NETWORK;
   const isTestnet = network === 'testnet';
 
+  const hasPrivateKey =
+    config.HYPERLIQUID_PRIVATE_KEY && config.HYPERLIQUID_PRIVATE_KEY !== 'your_private_key_here';
+  const hasAddress =
+    config.HYPERLIQUID_USER_ADDRESS &&
+    config.HYPERLIQUID_USER_ADDRESS !== 'your_wallet_address_here';
+
   console.error('🚀 HyperLiquid MCP Server starting...');
   console.error(`📡 Network: ${network.toUpperCase()}`);
-  console.error(`👛 Address: ${config.HYPERLIQUID_USER_ADDRESS}`);
+
+  if (hasAddress) {
+    console.error(`👛 Address: ${config.HYPERLIQUID_USER_ADDRESS}`);
+  }
+
+  if (hasPrivateKey) {
+    console.error('🔐 Mode: Full access (read/write)');
+  } else {
+    console.error('👁️  Mode: Read-only (no private key configured)');
+  }
+
   console.error(
     `🔗 API: ${isTestnet ? 'https://api.hyperliquid-testnet.xyz' : 'https://api.hyperliquid.xyz'}`
   );
@@ -237,7 +253,7 @@ async function createMCPServer() {
   const server = new Server(
     {
       name: 'hl-eco-mcp',
-      version: '0.1.6-alpha',
+      version: '0.1.8-alpha',
     },
     {
       capabilities: {
@@ -350,9 +366,27 @@ async function main() {
   if (args.includes('--check-config')) {
     const config = validateEnvironment();
     if (config) {
+      const hasPrivateKey =
+        config.HYPERLIQUID_PRIVATE_KEY &&
+        config.HYPERLIQUID_PRIVATE_KEY !== 'your_private_key_here';
+      const hasAddress =
+        config.HYPERLIQUID_USER_ADDRESS &&
+        config.HYPERLIQUID_USER_ADDRESS !== 'your_wallet_address_here';
+
       console.log('✅ Configuration is valid');
       console.log(`Network: ${config.HYPERLIQUID_NETWORK.toUpperCase()}`);
-      console.log(`Address: ${config.HYPERLIQUID_USER_ADDRESS}`);
+
+      if (hasAddress) {
+        console.log(`Address: ${config.HYPERLIQUID_USER_ADDRESS}`);
+      } else {
+        console.log('Address: Not configured (read-only mode)');
+      }
+
+      if (hasPrivateKey) {
+        console.log('Mode: Full access (read/write)');
+      } else {
+        console.log('Mode: Read-only');
+      }
     }
     process.exit(config ? 0 : 1);
   }

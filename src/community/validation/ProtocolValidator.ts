@@ -45,12 +45,14 @@ export class ProtocolValidator {
     });
 
     // Response definition schema
-    const responseSchema = z.object({
-      type: z.enum(['string', 'number', 'boolean', 'object', 'array']),
-      description: z.string().min(1),
-      properties: z.record(this.parameterSchema).optional(),
-      items: this.parameterSchema.optional(),
-    });
+    const responseSchema = z
+      .object({
+        type: z.enum(['string', 'number', 'boolean', 'object', 'array']),
+        description: z.string().min(1),
+        properties: z.record(z.any()).optional(),
+        items: z.any().optional(),
+      })
+      .optional();
 
     // Endpoint schema
     this.endpointSchema = z.object({
@@ -225,9 +227,18 @@ export class ProtocolValidator {
     });
 
     // Check for duplicate paths with same method
+    // Exception: GraphQL endpoints can have multiple operations on the same URL
     const pathMethods = new Set<string>();
     protocol.endpoints.forEach((endpoint: ProtocolEndpoint, index: number) => {
       const key = `${endpoint.method}:${endpoint.path}`;
+      const isGraphQL = endpoint.path.includes('/graphql') || endpoint.path.includes('/gql');
+
+      // For GraphQL endpoints, check for duplicate names instead of path/method
+      if (isGraphQL) {
+        // GraphQL endpoints are allowed to have the same path/method
+        return;
+      }
+
       if (pathMethods.has(key)) {
         errors.push({
           code: 'DUPLICATE_PATH_METHOD',
