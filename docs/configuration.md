@@ -188,7 +188,7 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
 ```json
 {
   "mcpServers": {
-    "defi-ecosystem": {
+    "hyperliquid": {
       "command": "hl-eco-mcp",
       "env": {
         "ENABLE_COMMUNITY_SYSTEM": "true",
@@ -204,7 +204,7 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
 ```json
 {
   "mcpServers": {
-    "defi-ecosystem": {
+    "hyperliquid": {
       "command": "hl-eco-mcp",
       "env": {
         "HYPERLIQUID_PRIVATE_KEY": "0x123...",
@@ -224,7 +224,7 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080
 ```json
 {
   "mcpServers": {
-    "defi-ecosystem": {
+    "hyperliquid": {
       "command": "hl-eco-mcp",
       "env": {
         "NODE_ENV": "production",

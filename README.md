@@ -71,7 +71,7 @@ hl-eco-mcp
 ```json
 {
   "mcpServers": {
-    "defi-ecosystem": {
+    "hyperliquid": {
       "command": "hl-eco-mcp",
       "env": {
         "ENABLE_COMMUNITY_SYSTEM": "true"
@@ -86,7 +86,7 @@ hl-eco-mcp
 ```json
 {
   "mcpServers": {
-    "defi-ecosystem": {
+    "hyperliquid": {
       "command": "hl-eco-mcp",
       "env": {
         "ENABLE_COMMUNITY_SYSTEM": "true",

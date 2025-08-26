@@ -102,6 +102,30 @@ export GLUEX_DEFI_API_KEY="your_gluex_key"  # Optional
 
 💡 **Security Tip**: Never commit private keys! Use environment variables or secure secret management.
 
+### 🌐 Community Protocols
+
+Add any REST or GraphQL API as tools without coding:
+
+```bash
+# 1. Enable community system
+export ENABLE_COMMUNITY_SYSTEM="true"
+
+# 2. Add protocol files to protocols/ directory
+cp docs/community-protocols/template/protocol-template.json protocols/my-api.json
+
+# 3. Set API keys if needed
+export MY_API_KEY="your_api_key"
+
+# 4. Restart server - tools auto-generate!
+```
+
+**Currently available protocol**: GlueX DeFi (6 tools)
+
+- `gluexDefi_getLiquidity` - Get liquidity across chains
+- `gluexDefi_searchTokens` - Search for tokens
+- `gluexDefi_getOptimalRoute` - Find best swap routes
+- And more...
+
 For complete configuration options, see [Configuration Guide](configuration.md).
 
 ## 🚀 Run the Server
@@ -183,7 +207,7 @@ docker run --rm -p 3000:3000 --env-file .env hl-eco-mcp:local
 ```json
 {
   "mcpServers": {
-    "defi-ecosystem": {
+    "hyperliquid": {
       "command": "hl-eco-mcp",
       "env": {
         "ENABLE_COMMUNITY_SYSTEM": "true",
@@ -199,7 +223,7 @@ docker run --rm -p 3000:3000 --env-file .env hl-eco-mcp:local
 ```json
 {
   "mcpServers": {
-    "defi-ecosystem": {
+    "hyperliquid": {
       "command": "hl-eco-mcp",
       "env": {
         "HYPERLIQUID_PRIVATE_KEY": "your_private_key_here",

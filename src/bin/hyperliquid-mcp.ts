@@ -13,17 +13,10 @@
  *   HYPERLIQUID_NETWORK         - Network to use: 'mainnet' or 'testnet' (default: mainnet)
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { getConfig, validateConfig, createCommunitySystemConfig } from '../config/index.js';
-import { SimpleAdapterManager } from '../server/SimpleAdapterManager.js';
-import { ToolRegistry } from '../server/ToolRegistry.js';
-import { CommunityManager } from '../community/CommunityManager.js';
-import { ToolGenerator } from '../community/generation/ToolGenerator.js';
+import { MCPServer } from '../server/MCPServer.js';
 import { createComponentLogger } from '../utils/logger.js';
-import { zodToJsonSchema } from 'zod-to-json-schema';
-import { readdir } from 'fs/promises';
+import { readdir, readFile } from 'fs/promises';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -168,24 +161,18 @@ async function createMCPServer() {
 
   displayStartupInfo(config);
 
-  // Initialize components
-  const toolRegistry = new ToolRegistry();
-  const adapterManager = new SimpleAdapterManager(toolRegistry, {
-    enableHyperLiquid: true,
-    testnet: config.HYPERLIQUID_NETWORK === 'testnet',
-  });
+  // Create MCPServer
+  const mcpServer = new MCPServer();
 
   try {
-    // Initialize all adapters and tools
-    await adapterManager.initialize();
+    // The MCPServer automatically initializes adapters internally
 
     // Initialize community system if enabled
     if (config.ENABLE_COMMUNITY_SYSTEM) {
       console.error('🌐 Initializing community protocol system...');
 
       const communityConfig = createCommunitySystemConfig(config);
-      const communityManager = new CommunityManager(communityConfig);
-      const toolGenerator = new ToolGenerator();
+      await mcpServer.initializeCommunitySystem(communityConfig);
 
       // Load protocols from the protocols/ directory
       const __filename = fileURLToPath(import.meta.url);
@@ -204,27 +191,17 @@ async function createMCPServer() {
             const protocolName = file.replace('.json', '');
 
             console.error(`⚡ Loading protocol: ${protocolName}`);
-            const loadedProtocol = await communityManager['loader'].loadFromFile(protocolPath);
 
-            // Generate and register tools for this protocol
-            const tools = await toolGenerator.generateTools(loadedProtocol.protocol);
+            // Use proper community manager method
+            if (mcpServer.communityManager) {
+              const protocolContent = await readFile(protocolPath, 'utf-8');
+              const protocolData = JSON.parse(protocolContent);
+              const loadedProtocol = await mcpServer.communityManager.loadProtocol(protocolData);
 
-            for (const tool of tools) {
-              toolRegistry.register('community', {
-                name: tool.name,
-                description: tool.description,
-                category: 'community',
-                version: loadedProtocol.protocol.version || '1.0.0',
-                enabled: true,
-                inputSchema: tool.parameters,
-                handler: tool.handler,
-              });
+              console.error(`✅ Loaded ${loadedProtocol.tools.length} tools from ${protocolName}`);
             }
-
-            console.error(`✅ Loaded ${tools.length} tools from ${protocolName}`);
           } catch (protocolError: any) {
             console.error(`❌ Failed to load protocol ${file}: ${protocolError.message}`);
-            logger.warn('Protocol loading failed', { file, error: protocolError.message });
           }
         }
       } catch (dirError: any) {
@@ -232,7 +209,7 @@ async function createMCPServer() {
       }
     }
 
-    const registeredTools = toolRegistry.getTools();
+    const registeredTools = mcpServer.toolRegistry.getTools();
     console.error(`✅ Server ready with ${registeredTools.length} tools available`);
     console.error('📋 Available tool categories:');
 
@@ -243,106 +220,12 @@ async function createMCPServer() {
     });
 
     console.error('\n🔄 MCP Server is running and waiting for client connections...\n');
+
+    return mcpServer;
   } catch (error: any) {
     console.error('❌ Failed to initialize server:', error.message);
-    logger.error('Server initialization failed', { error: error.stack });
     process.exit(1);
   }
-
-  // Create MCP server
-  const server = new Server(
-    {
-      name: 'hl-eco-mcp',
-      version: '0.1.8-alpha',
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    }
-  );
-
-  // Register all tools from the registry
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    const tools = toolRegistry.getTools();
-    console.error(`[MCP DEBUG] Returning ${tools.length} tools to client`);
-    tools.forEach((tool: any) => {
-      console.error(`[MCP DEBUG] Tool: ${tool.name} (${tool.category})`);
-      console.error(`[MCP DEBUG] Tool schema type:`, typeof tool.schema, typeof tool.inputSchema);
-    });
-    return {
-      tools: tools.map((tool: any) => ({
-        name: tool.name,
-        description: tool.description,
-        // Use inputSchema directly if it exists (already in JSON Schema format)
-        // otherwise try to convert from Zod schema
-        inputSchema:
-          tool.inputSchema ||
-          (tool.schema ? zodToJsonSchema(tool.schema) : { type: 'object', properties: {} }),
-      })),
-    };
-  });
-
-  // Handle tool execution
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name, arguments: args } = request.params;
-
-    try {
-      const tool = toolRegistry.getTool(name);
-      if (!tool) {
-        throw new Error(`Tool '${name}' not found`);
-      }
-
-      logger.debug('Executing tool', { name, category: tool.category });
-      const result = await tool.handler(args || {});
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(result, null, 2),
-          },
-        ],
-      };
-    } catch (error: any) {
-      logger.error('Tool execution failed', { name, error: error.message });
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Error executing ${name}: ${error.message}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-  });
-
-  // Handle graceful shutdown
-  process.on('SIGINT', async () => {
-    console.error('\n🛑 Shutting down HyperLiquid MCP Server...');
-    try {
-      await adapterManager.cleanup();
-      console.error('✅ Cleanup completed');
-    } catch (error: any) {
-      console.error('❌ Error during cleanup:', error.message);
-    }
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', async () => {
-    console.error('\n🛑 Received SIGTERM, shutting down...');
-    try {
-      await adapterManager.cleanup();
-      console.error('✅ Cleanup completed');
-    } catch (error: any) {
-      console.error('❌ Error during cleanup:', error.message);
-    }
-    process.exit(0);
-  });
-
-  return server;
 }
 
 /**
@@ -392,14 +275,12 @@ async function main() {
   }
 
   try {
-    const server = await createMCPServer();
+    const mcpServer = await createMCPServer();
 
-    // Use stdio transport for MCP communication
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
+    // Start the MCP server (handles stdio transport internally)
+    await mcpServer.start();
   } catch (error: any) {
     console.error('❌ Failed to start MCP server:', error.message);
-    logger.error('Server startup failed', { error: error.stack });
     process.exit(1);
   }
 }

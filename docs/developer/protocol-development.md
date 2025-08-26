@@ -18,11 +18,39 @@ Welcome to the HyperLiquid MCP Server community protocol system! This guide will
 
 The community protocol system allows you to extend the HyperLiquid MCP Server with new APIs and services by simply defining them in JSON. Each protocol definition automatically generates MCP tools that AI agents can discover and use.
 
+### Architecture
+
+The community protocol system follows an event-driven architecture:
+
+```
+protocols/ directory
+    ↓
+CommunityManager (loads & validates)
+    ↓
+ToolGenerator (creates MCP tools)
+    ↓
+Event: protocol:loaded
+    ↓
+MCPServer.onCommunityProtocolLoaded()
+    ↓
+ToolRegistry (registers tools)
+    ↓
+Available in Claude Code!
+```
+
+**Key Components**:
+
+- **CommunityManager**: Manages protocol lifecycle
+- **ToolGenerator**: Converts endpoints to MCP tools
+- **ProtocolValidator**: Ensures protocol correctness
+- **DynamicLoader**: Loads protocols from files or URLs
+- **MCPServer**: Integrates tools into the MCP protocol
+
 ### What Gets Generated
 
 From your protocol definition, the system automatically creates:
 
-- **MCP Tools**: Each endpoint becomes a callable tool
+- **MCP Tools**: Each endpoint becomes a callable tool with naming pattern `protocolName_endpointName`
 - **Input Schemas**: Parameter validation and documentation
 - **Authentication Handling**: Automatic API key/token management
 - **Error Handling**: Consistent error responses
