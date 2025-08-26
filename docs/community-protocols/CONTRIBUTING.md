@@ -38,12 +38,10 @@ Thank you for your interest in contributing to the community protocols! This gui
 git clone https://github.com/yourusername/hyper-mcp.git
 cd hyper-mcp
 
-# 2. Create protocol directory
-mkdir -p docs/community-protocols/your-protocol-name
-
-# 3. Start with template
+# 2. Create protocol file
+# Copy the template to protocols directory
 cp docs/community-protocols/template/protocol-template.json \
-   docs/community-protocols/your-protocol-name/protocol.json
+   protocols/your-protocol-name.json
 ```
 
 **Development Workflow**:
@@ -62,7 +60,7 @@ All protocols must pass these tests before submission:
 
 ```bash
 # Protocol structure validation
-node dist/bin/hyperliquid-mcp.js --validate-protocol docs/community-protocols/your-protocol/protocol.json
+node dist/bin/hyperliquid-mcp.js --validate-protocol protocols/your-protocol-name.json
 
 # Tool generation test
 ENABLE_COMMUNITY_SYSTEM=true LOG_LEVEL=debug node dist/bin/hyperliquid-mcp.js --test-tools
@@ -211,7 +209,7 @@ Common issues and solutions
 2. **Commit Changes**:
 
    ```bash
-   git add docs/community-protocols/protocol-name/
+   git add protocols/protocol-name.json
    git commit -m "feat: add protocol-name community protocol
 
    - Integrates Protocol Name API with X tools

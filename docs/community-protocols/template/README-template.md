@@ -40,7 +40,7 @@ This protocol generates the following MCP tools:
 1. **Copy protocol file**:
 
    ```bash
-   cp docs/community-protocols/protocol-name/protocol.json community-protocols/
+   cp docs/community-protocols/template/protocol-template.json protocols/protocol-name.json
    ```
 
 2. **Enable community system**:
@@ -269,7 +269,7 @@ Common errors and solutions:
 1. **Check protocol installation**:
 
    ```bash
-   ls community-protocols/protocol-name.json
+   ls protocols/protocol-name.json
    ```
 
 2. **Verify environment variables**:
