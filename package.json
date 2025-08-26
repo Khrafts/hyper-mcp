@@ -1,6 +1,6 @@
 {
   "name": "hl-eco-mcp",
-  "version": "0.1.9-alphaalpha",
+  "version": "0.1.9-alpha",
   "description": "Gateway to the HyperLiquid Ecosystem for AI agents.",
   "main": "dist/index.js",
   "bin": {
