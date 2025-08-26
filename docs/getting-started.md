@@ -59,15 +59,28 @@ nano .env  # or your preferred editor
 
 ## ⚙️ Configuration
 
-### Basic Setup (Market Data Only)
+hl-eco-mcp supports two modes:
+
+### 🔍 Read-Only Mode (Recommended for beginners)
+
+**No API keys required!** Perfect for market analysis and learning:
 
 ```bash
-# Minimal configuration for market data
+# Minimal configuration - works immediately
 export LOG_LEVEL=info
-export MCP_SERVER_PORT=3000
+export ENABLE_COMMUNITY_SYSTEM="true"  # Access community protocols
 ```
 
-### Trading Setup (Full Features)
+**Available in read-only mode:**
+
+- Real-time market data and price feeds
+- Protocol information and analytics
+- Portfolio analysis (view-only)
+- All community protocol tools that don't require authentication
+
+### 🔑 Full-Access Mode (For trading)
+
+**API keys required** for trading and account management:
 
 ```bash
 # HyperLiquid trading credentials
@@ -75,9 +88,17 @@ export HYPERLIQUID_PRIVATE_KEY="0xYOUR_PRIVATE_KEY"
 export HYPERLIQUID_USER_ADDRESS="0xYOUR_WALLET_ADDRESS"
 export HYPERLIQUID_TESTNET="true"  # Start with testnet!
 
-# Community protocols (optional)
+# Community protocols
 export ENABLE_COMMUNITY_SYSTEM="true"
+export GLUEX_DEFI_API_KEY="your_gluex_key"  # Optional
 ```
+
+**Additional features in full-access mode:**
+
+- Execute trades and manage positions
+- Account management and transfers
+- Risk management tools
+- All protocol features requiring authentication
 
 💡 **Security Tip**: Never commit private keys! Use environment variables or secure secret management.
 
@@ -87,9 +108,21 @@ For complete configuration options, see [Configuration Guide](configuration.md).
 
 ### NPM Package
 
+**Read-only mode (no setup required):**
+
+```bash
+# Start immediately - perfect for market data
+hl-eco-mcp
+
+# Enable community protocols
+ENABLE_COMMUNITY_SYSTEM=true hl-eco-mcp
+```
+
+**Full-access mode (API keys required):**
+
 ```bash
 # Run with environment variables
-HYPERLIQUID_TESTNET=true hl-eco-mcp
+HYPERLIQUID_TESTNET=true HYPERLIQUID_PRIVATE_KEY=your_key hl-eco-mcp
 
 # Or with config file
 hl-eco-mcp --config ./my-config.env
@@ -106,13 +139,24 @@ pnpm run build
 pnpm start
 ```
 
-You should see:
+**Read-only mode output:**
+
+```
+🚀 HyperLiquid MCP Server starting...
+⚠️  Running in READ-ONLY mode (no private key configured)
+✅ Server initialized on port 3000
+📊 HyperLiquid integration: ACTIVE (market data only)
+🌐 Community protocols: 6 loaded (GlueX, others...)
+🎯 Ready for AI agent connections!
+```
+
+**Full-access mode output:**
 
 ```
 🚀 HyperLiquid MCP Server starting...
 ✅ Server initialized on port 3000
-📊 HyperLiquid integration: ACTIVE
-🌐 Community protocols: 0 loaded
+📊 HyperLiquid integration: ACTIVE (full trading access)
+🌐 Community protocols: 6 loaded (GlueX, others...)
 🎯 Ready for AI agent connections!
 ```
 
@@ -134,17 +178,35 @@ docker run --rm -p 3000:3000 --env-file .env hl-eco-mcp:local
 
 ### Claude Desktop Configuration
 
-Add to your `claude_desktop_config.json`:
+**Read-only mode configuration:**
 
 ```json
 {
   "mcpServers": {
-    "hyperliquid": {
+    "defi-ecosystem": {
+      "command": "hl-eco-mcp",
+      "env": {
+        "ENABLE_COMMUNITY_SYSTEM": "true",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}
+```
+
+**Full-access mode configuration:**
+
+```json
+{
+  "mcpServers": {
+    "defi-ecosystem": {
       "command": "hl-eco-mcp",
       "env": {
         "HYPERLIQUID_PRIVATE_KEY": "your_private_key_here",
         "HYPERLIQUID_USER_ADDRESS": "your_address_here",
-        "HYPERLIQUID_TESTNET": "true"
+        "HYPERLIQUID_TESTNET": "true",
+        "ENABLE_COMMUNITY_SYSTEM": "true",
+        "GLUEX_DEFI_API_KEY": "your_gluex_key"
       }
     }
   }
@@ -165,13 +227,24 @@ Ask your AI agent:
 "Check if the HyperLiquid MCP server is working"
 ```
 
-### Test Trading (Testnet)
+### Test Read-Only Features
+
+Ask your AI agent:
+
+```
+"What's the current BTC price on HyperLiquid?"
+"Show me market data for ETH-USD"
+"What community protocols are available?"
+```
+
+### Test Full-Access Features (if configured)
 
 Ask your AI agent:
 
 ```
 "What's my HyperLiquid account balance?"
-"Show me the current BTC price on HyperLiquid"
+"Show me my current positions"
+"Create a small test order on testnet"
 ```
 
 ### Development Testing

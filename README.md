@@ -15,19 +15,47 @@
 
 ## 🚀 Quick Start
 
+### 🔍 Read-Only Mode (No API Keys Required)
+
+Get started instantly with market data and read-only features:
+
+```bash
+# Install the MCP server
+npm install -g hl-eco-mcp
+
+# Run in read-only mode - perfect for market analysis
+hl-eco-mcp
+```
+
+**Available in read-only mode**: Market data, price feeds, analytics, protocol information, and more!
+
+### 🔑 Full-Access Mode (API Keys Required)
+
+For trading and account management, add your API keys:
+
+```bash
+# Set your credentials for trading features
+export HYPERLIQUID_PRIVATE_KEY="your_key_here"
+export GLUEX_DEFI_API_KEY="your_key_here"
+
+# Now access all features including trading
+hl-eco-mcp
+```
+
 ### For Protocol Teams - Add Your API in 30 Minutes
 
 ```json
-// protocols/your-protocol.json
+// docs/community-protocols/template/protocol-template.json
 {
   "name": "your-defi-protocol",
   "version": "1.0.0",
   "description": "Your protocol description",
+  "baseUrl": "https://api.yourprotocol.com/v1",
   "endpoints": [
     {
       "name": "getPoolInfo",
       "method": "GET",
-      "path": "https://api.yourprotocol.com/pools/{poolId}",
+      "path": "/pools/{poolId}",
       "description": "Get liquidity pool information"
     }
   ]
@@ -36,17 +64,24 @@
 
 **Result**: Your API is now accessible to every AI agent as `your_defi_protocol_getPoolInfo`!
 
-### For AI Users - Install and Use Any Protocol
+### Claude Desktop Configuration
 
-```bash
-# Install the MCP server
-npm install -g hl-eco-mcp
+**Read-Only Mode** (market data and analytics only):
 
-# Configure with your favorite AI agent
-hl-eco-mcp --setup
+```json
+{
+  "mcpServers": {
+    "defi-ecosystem": {
+      "command": "hl-eco-mcp",
+      "env": {
+        "ENABLE_COMMUNITY_SYSTEM": "true"
+      }
+    }
+  }
+}
 ```
 
-### Claude Desktop Configuration
+**Full-Access Mode** (includes trading capabilities):
 
 ```json
 {
@@ -55,9 +90,9 @@ hl-eco-mcp --setup
       "command": "hl-eco-mcp",
       "env": {
         "ENABLE_COMMUNITY_SYSTEM": "true",
-        // Add API keys for protocols you want to use
-        "HYPERLIQUID_PRIVATE_KEY": "your_key_here",
-        "GLUEX_DEFI_API_KEY": "your_key_here"
+        "HYPERLIQUID_PRIVATE_KEY": "your_private_key",
+        "HYPERLIQUID_USER_ADDRESS": "your_wallet_address",
+        "GLUEX_DEFI_API_KEY": "your_api_key"
       }
     }
   }
@@ -88,10 +123,29 @@ As a demonstration of what's possible, we include a complete HyperLiquid integra
 
 ## 📖 Documentation
 
-- **[Quick Start Guide](./docs/getting-started.md)** - Get running in 5 minutes
-- **[Protocol Contribution Guide](./CONTRIBUTING.md)** - Add your API to the ecosystem
-- **[API Reference](./docs/)** - Complete documentation for all tools
-- **[Examples](./protocols/)** - Real protocol definitions to learn from
+🚀 **[Complete Documentation on GitBook](https://khrafts.gitbook.io/hyper-mcp)** 🚀
+
+### Quick Links
+
+#### For Users
+
+- **[Getting Started](https://khrafts.gitbook.io/hyper-mcp/getting-started)** - Setup and basic usage
+- **[Configuration Guide](https://khrafts.gitbook.io/hyper-mcp/configuration)** - Read-only vs full-access modes
+- **[Available Tools](https://khrafts.gitbook.io/hyper-mcp/user-guide/mcp-tools-32+-available)** - Complete tool catalog
+
+#### For Developers
+
+- **[Protocol Development](https://khrafts.gitbook.io/hyper-mcp/developer-guide/protocol-development)** - Create new protocol integrations
+- **[JSON Schema Reference](https://khrafts.gitbook.io/hyper-mcp/developer-guide/json-schema-reference)** - Complete protocol specification
+- **[Tool Generation Process](https://khrafts.gitbook.io/hyper-mcp/developer-guide/tool-generation-process)** - How protocols become MCP tools
+- **[SDK Documentation](https://khrafts.gitbook.io/hyper-mcp/developer-guide/sdk-documentation)** - TypeScript SDK for protocol development
+- **[Testing & Debugging](https://khrafts.gitbook.io/hyper-mcp/developer-guide/testing-and-debugging)** - Development workflow and troubleshooting
+
+#### Community
+
+- **[Community Protocols](https://khrafts.gitbook.io/hyper-mcp/community-protocols)** - Browse and contribute protocols
+- **[Contributing Guide](https://khrafts.gitbook.io/hyper-mcp/community-protocols/contributing-guide)** - Add your API to the ecosystem
+- **[Protocol Templates](https://khrafts.gitbook.io/hyper-mcp/community-protocols/templates-and-examples)** - Quick start templates
 
 ## 🔒 Security
 
@@ -136,7 +190,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
-- 📚 [Documentation](./docs/)
+- 📚 [Documentation](https://khrafts.gitbook.io/hyper-mcp)
 - 🐛 [Issues](https://github.com/khrafts/hyper-mcp/issues)
 - 💬 [Discussions](https://github.com/khrafts/hyper-mcp/discussions)
 

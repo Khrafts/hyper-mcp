@@ -1,0 +1,324 @@
+{
+  "name": "example-api",
+  "version": "1.0.0",
+  "description": "Integration with Example API for [brief description of main functionality]",
+  "baseUrl": "https://api.example.com/v1",
+  "documentation": "https://docs.example.com/api",
+  "authentication": {
+    "type": "bearer",
+    "token": "${EXAMPLE_API_KEY}",
+    "description": "Get your API key from https://example.com/settings/api"
+  },
+  "rateLimits": {
+    "requestsPerMinute": 100,
+    "requestsPerHour": 1000,
+    "description": "Standard rate limits apply. Premium accounts have higher limits."
+  },
+  "endpoints": [
+    {
+      "path": "/items",
+      "method": "GET",
+      "name": "list_items",
+      "description": "Retrieve a paginated list of items with optional filtering",
+      "parameters": {
+        "limit": {
+          "type": "integer",
+          "required": false,
+          "description": "Number of items to return (max 100)",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 100
+        },
+        "offset": {
+          "type": "integer",
+          "required": false,
+          "description": "Number of items to skip for pagination",
+          "default": 0,
+          "minimum": 0
+        },
+        "status": {
+          "type": "string",
+          "required": false,
+          "description": "Filter items by status",
+          "enum": ["active", "inactive", "pending"],
+          "example": "active"
+        },
+        "search": {
+          "type": "string",
+          "required": false,
+          "description": "Search items by name or description",
+          "example": "example query"
+        }
+      },
+      "response": {
+        "type": "object",
+        "description": "Paginated list of items",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "Array of item objects"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total number of items available"
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Whether there are more items to fetch"
+          }
+        }
+      },
+      "examples": [
+        {
+          "description": "Get first 10 active items",
+          "parameters": {
+            "limit": 10,
+            "status": "active"
+          }
+        }
+      ]
+    },
+    {
+      "path": "/items/{id}",
+      "method": "GET",
+      "name": "get_item",
+      "description": "Retrieve detailed information about a specific item",
+      "parameters": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "location": "path",
+          "description": "Unique identifier of the item",
+          "example": "item-123"
+        }
+      },
+      "response": {
+        "type": "object",
+        "description": "Detailed item information",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Item identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Item name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Item description"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current item status"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Item creation timestamp"
+          }
+        }
+      },
+      "examples": [
+        {
+          "description": "Get item with ID 'item-123'",
+          "parameters": {
+            "id": "item-123"
+          }
+        }
+      ],
+      "errorResponses": {
+        "404": "Item not found - The specified item ID does not exist"
+      }
+    },
+    {
+      "path": "/items",
+      "method": "POST",
+      "name": "create_item",
+      "description": "Create a new item with the specified properties",
+      "parameters": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "location": "body",
+          "description": "Name of the new item",
+          "minLength": 1,
+          "maxLength": 100,
+          "example": "My New Item"
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "location": "body",
+          "description": "Optional description of the item",
+          "maxLength": 500,
+          "example": "This is a sample item description"
+        },
+        "category": {
+          "type": "string",
+          "required": true,
+          "location": "body",
+          "description": "Category for the new item",
+          "enum": ["category1", "category2", "category3"],
+          "example": "category1"
+        },
+        "tags": {
+          "type": "array",
+          "required": false,
+          "location": "body",
+          "description": "Optional array of tags for the item",
+          "items": {
+            "type": "string"
+          },
+          "example": ["tag1", "tag2"]
+        }
+      },
+      "response": {
+        "type": "object",
+        "description": "Created item information",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Generated item identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Item name"
+          },
+          "status": {
+            "type": "string",
+            "description": "Initial item status (usually 'pending')"
+          }
+        }
+      },
+      "examples": [
+        {
+          "description": "Create a simple item",
+          "parameters": {
+            "name": "Test Item",
+            "category": "category1"
+          }
+        }
+      ],
+      "errorResponses": {
+        "400": "Bad Request - Invalid parameters provided",
+        "422": "Validation Error - Item name already exists"
+      }
+    },
+    {
+      "path": "/items/{id}",
+      "method": "PUT",
+      "name": "update_item",
+      "description": "Update an existing item with new properties",
+      "parameters": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "location": "path",
+          "description": "Unique identifier of the item to update",
+          "example": "item-123"
+        },
+        "name": {
+          "type": "string",
+          "required": false,
+          "location": "body",
+          "description": "New name for the item",
+          "minLength": 1,
+          "maxLength": 100,
+          "example": "Updated Item Name"
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "location": "body",
+          "description": "New description for the item",
+          "maxLength": 500,
+          "example": "Updated item description"
+        },
+        "status": {
+          "type": "string",
+          "required": false,
+          "location": "body",
+          "description": "New status for the item",
+          "enum": ["active", "inactive", "pending"],
+          "example": "active"
+        }
+      },
+      "response": {
+        "type": "object",
+        "description": "Updated item information"
+      },
+      "examples": [
+        {
+          "description": "Update item name and status",
+          "parameters": {
+            "id": "item-123",
+            "name": "Updated Name",
+            "status": "active"
+          }
+        }
+      ],
+      "errorResponses": {
+        "404": "Item not found - The specified item ID does not exist",
+        "422": "Validation Error - Invalid status or name format"
+      }
+    },
+    {
+      "path": "/items/{id}",
+      "method": "DELETE",
+      "name": "delete_item",
+      "description": "Delete an existing item permanently",
+      "parameters": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "location": "path",
+          "description": "Unique identifier of the item to delete",
+          "example": "item-123"
+        }
+      },
+      "response": {
+        "type": "object",
+        "description": "Deletion confirmation",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the deletion was successful"
+          },
+          "message": {
+            "type": "string",
+            "description": "Confirmation message"
+          }
+        }
+      },
+      "examples": [
+        {
+          "description": "Delete item with ID 'item-123'",
+          "parameters": {
+            "id": "item-123"
+          }
+        }
+      ],
+      "errorResponses": {
+        "404": "Item not found - The specified item ID does not exist",
+        "409": "Conflict - Item cannot be deleted due to dependencies"
+      }
+    }
+  ],
+  "commonErrorResponses": {
+    "401": "Unauthorized - Invalid or missing API key",
+    "403": "Forbidden - Insufficient permissions for this operation",
+    "429": "Rate Limited - Too many requests, please slow down",
+    "500": "Server Error - Internal API error, please try again later"
+  },
+  "tags": ["example", "template", "rest-api"],
+  "categories": ["development-tools", "data-management"],
+  "maintainer": {
+    "name": "Your Name",
+    "email": "your.email@example.com",
+    "github": "yourusername"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yourorg/example-api-protocol",
+  "changelog": "https://github.com/yourorg/example-api-protocol/blob/main/CHANGELOG.md"
+}

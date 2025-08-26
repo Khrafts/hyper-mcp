@@ -1,0 +1,33 @@
+# GitBook configuration for hyper-mcp documentation
+# Learn more at https://docs.gitbook.com/integrations/git-sync/content-configuration
+
+# Path to documentation content (relative to repo root)
+root: ./docs/
+
+# Structure configuration
+structure:
+  readme: README.md
+  summary: SUMMARY.md
+
+# Automatic redirection for missing pages
+redirects: {}
+
+# PDF export settings
+pdf:
+  margin:
+    top: 36
+    bottom: 36
+    left: 62
+    right: 62
+
+# Format settings
+format:
+  # Auto-detect page breaks for better PDF generation
+  page-break-before: h1
+
+# GitBook integration settings
+integrations:
+  github:
+    # Enable GitHub integration for edit links
+    enabled: true
+    # Repository URL will be auto-detected from Git Sync
