@@ -304,15 +304,48 @@ async function createMCPServer() {
       await mcpServer.initializeCommunitySystem(communityConfig);
 
       // Load protocols from the protocols/ directory
+      // Try multiple possible locations for the protocols directory
       const __filename = fileURLToPath(import.meta.url);
       const __dirname = dirname(__filename);
-      const protocolsDir = join(__dirname, '../../protocols');
 
-      try {
-        const protocolFiles = await readdir(protocolsDir);
-        const jsonFiles = protocolFiles.filter((file) => file.endsWith('.json'));
+      // Potential protocol directory locations (in order of preference)
+      const potentialDirs = [
+        join(__dirname, '../../protocols'), // Standard: dist/bin -> project root
+        join(process.cwd(), 'protocols'), // Current working directory
+        join(__dirname, '../../../protocols'), // If nested deeper
+        join(__dirname, 'protocols'), // Same directory as binary
+      ];
 
+      let protocolsDir: string | null = null;
+      for (const dir of potentialDirs) {
+        try {
+          await readdir(dir);
+          protocolsDir = dir;
+          break;
+        } catch {
+          // Directory doesn't exist or can't be accessed, try next
+          continue;
+        }
+      }
+
+      if (!protocolsDir) {
+        console.error(
+          '📦 No protocols directory found - community system ready but no protocols loaded'
+        );
+        console.error('💡 To add protocols: create a "protocols/" directory in your project root');
+        return mcpServer;
+      }
+
+      const protocolFiles = await readdir(protocolsDir);
+      const jsonFiles = protocolFiles.filter((file) => file.endsWith('.json'));
+
+      if (jsonFiles.length === 0) {
+        console.error(
+          '📦 No protocol files found - community system ready but no protocols loaded'
+        );
+      } else {
         console.error(`📦 Found ${jsonFiles.length} protocol files: ${jsonFiles.join(', ')}`);
+        console.error(`📂 Loading from: ${protocolsDir}`);
 
         for (const file of jsonFiles) {
           try {
@@ -333,8 +366,6 @@ async function createMCPServer() {
             console.error(`❌ Failed to load protocol ${file}: ${protocolError.message}`);
           }
         }
-      } catch (dirError: any) {
-        console.error(`⚠️  Protocols directory not found or inaccessible: ${dirError.message}`);
       }
     }
 
