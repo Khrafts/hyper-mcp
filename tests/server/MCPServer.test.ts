@@ -3,8 +3,26 @@ jest.mock('@modelcontextprotocol/sdk/server/index.js', () => ({
   Server: class MockServer {
     constructor() {}
     setRequestHandler() {}
+    connect() {
+      return Promise.resolve();
+    }
     onerror = null;
     onclose = null;
+  },
+}));
+
+jest.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
+  StdioServerTransport: class MockStdioServerTransport {
+    constructor() {}
+    start() {
+      return Promise.resolve();
+    }
+    close() {
+      return Promise.resolve();
+    }
+    send() {
+      return Promise.resolve();
+    }
   },
 }));
 

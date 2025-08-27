@@ -1,4 +1,5 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -262,8 +263,9 @@ export class MCPServer implements IMCPServer {
       // Initialize adapters and tools
       await this._adapterManager.initialize();
 
-      // Start server (it connects via stdio automatically)
-      // The @modelcontextprotocol/sdk server doesn't need explicit connection
+      // Connect to stdio transport for MCP protocol
+      const transport = new StdioServerTransport();
+      await this.server.connect(transport);
 
       this.isRunning = true;
 
@@ -661,6 +663,10 @@ export class MCPServer implements IMCPServer {
       category: 'system',
       version: '1.0.0',
       enabled: true,
+      inputSchema: {
+        type: 'object',
+        properties: {},
+      },
       handler: async () => {
         return await this.getHealthStatus();
       },
@@ -673,6 +679,10 @@ export class MCPServer implements IMCPServer {
       category: 'community',
       version: '1.0.0',
       enabled: true,
+      inputSchema: {
+        type: 'object',
+        properties: {},
+      },
       handler: async () => {
         if (!this._communityManager) {
           return { error: 'Community system not initialized' };
@@ -732,6 +742,10 @@ export class MCPServer implements IMCPServer {
       category: 'system',
       version: '1.0.0',
       enabled: true,
+      inputSchema: {
+        type: 'object',
+        properties: {},
+      },
       handler: async () => {
         const sessionStats = this._sessionManager.getStatistics();
         const toolStats = this._toolRegistry.getStatistics();
