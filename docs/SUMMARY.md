@@ -8,7 +8,7 @@
 
 ## User Guide
 
-### MCP Tools (32+ Available)
+### MCP Tools
 
 - [🛠️ Tools Overview](tools/overview.md)
 

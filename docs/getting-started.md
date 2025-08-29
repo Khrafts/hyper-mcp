@@ -123,8 +123,10 @@ export MY_API_KEY="your_api_key"
 
 - `gluexDefi_getLiquidity` - Get liquidity across chains
 - `gluexDefi_searchTokens` - Search for tokens
+- `gluexDefi_getTokensByType` - Get tokens by type
+- `gluexDefi_listTokens` - List all tokens
 - `gluexDefi_getOptimalRoute` - Find best swap routes
-- And more...
+- `gluexDefi_executeSwap` - Execute token swaps
 
 For complete configuration options, see [Configuration Guide](configuration.md).
 
@@ -170,7 +172,7 @@ pnpm start
 ⚠️  Running in READ-ONLY mode (no private key configured)
 ✅ Server initialized on port 3000
 📊 HyperLiquid integration: ACTIVE (market data only)
-🌐 Community protocols: 6 loaded (GlueX, others...)
+🌐 Community protocols: 1 loaded (GlueX)
 🎯 Ready for AI agent connections!
 ```
 
@@ -180,22 +182,19 @@ pnpm start
 🚀 HyperLiquid MCP Server starting...
 ✅ Server initialized on port 3000
 📊 HyperLiquid integration: ACTIVE (full trading access)
-🌐 Community protocols: 6 loaded (GlueX, others...)
+🌐 Community protocols: 1 loaded (GlueX)
 🎯 Ready for AI agent connections!
 ```
 
 ### Docker Deployment
 
 ```bash
-# Quick start with Docker
-docker run --rm -p 3000:3000 \
-  -e HYPERLIQUID_TESTNET=true \
-  -e HYPERLIQUID_PRIVATE_KEY=your_key_here \
-  khrafts/hl-eco-mcp:latest
-
-# Or build from source
+# Build from source
 docker build -t hl-eco-mcp:local .
 docker run --rm -p 3000:3000 --env-file .env hl-eco-mcp:local
+
+# Or with docker-compose
+docker-compose up -d
 ```
 
 ## 🔧 MCP Client Setup

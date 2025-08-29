@@ -13,40 +13,18 @@ Community protocols are JSON-defined API integrations that automatically generat
 3. **Enable Community System**: Set `ENABLE_COMMUNITY_SYSTEM=true` in your environment
 4. **Restart MCP Server**: Tools will be automatically generated and available
 
-## Available Protocol Categories
+## Available Protocols
 
-### DeFi & Trading
+### Currently Available
 
-- [**HyperLiquid**](hyperliquid/README.md) - Perpetual futures trading and market data
-- [**GlueX**](gluex/README.md) - DeFi protocol aggregation and analytics
+- **GlueX** - Multi-chain DeFi protocol aggregation and routing (6 tools)
+  - Location: `protocols/gluex-protocol.json`
+  - Categories: Liquidity, routing, token discovery, cross-chain swaps
+  - Authentication: API key required for some endpoints
 
-### Development Tools
+### How to Add New Protocols
 
-- [**GitHub**](github/README.md) - Repository management and code analysis
-- [**Vercel**](vercel/README.md) - Deployment and project management
-
-### AI & Machine Learning
-
-- [**OpenAI**](openai/README.md) - GPT models and AI services
-- [**Anthropic**](anthropic/README.md) - Claude API integration
-
-### Data & Analytics
-
-- [**CoinGecko**](coingecko/README.md) - Cryptocurrency market data
-- [**Alpha Vantage**](alphavantage/README.md) - Financial market data
-
-## Protocol Status
-
-| Protocol      | Status         | Version | Tools Generated | Last Updated |
-| ------------- | -------------- | ------- | --------------- | ------------ |
-| HyperLiquid   | ✅ Active      | 1.0.0   | 15              | 2024-01-15   |
-| GlueX         | ✅ Active      | 1.2.0   | 6               | 2024-01-12   |
-| GitHub        | 🧪 Beta        | 0.9.0   | 12              | 2024-01-10   |
-| Vercel        | 🚧 Development | 0.5.0   | 8               | 2024-01-08   |
-| OpenAI        | ✅ Active      | 2.1.0   | 10              | 2024-01-14   |
-| Anthropic     | 🧪 Beta        | 1.0.0   | 7               | 2024-01-11   |
-| CoinGecko     | ✅ Active      | 1.3.0   | 9               | 2024-01-13   |
-| Alpha Vantage | ✅ Active      | 1.1.0   | 11              | 2024-01-09   |
+Community protocols are welcome! Simply submit a protocol definition in JSON format following our template.
 
 ## Contributing New Protocols
 
@@ -97,24 +75,16 @@ All community protocols are open source and contributed under the MIT license un
 
 Below are all available community protocols with quick access links:
 
-### Production Ready (✅)
+### Available Now
 
-- [HyperLiquid](hyperliquid/) - Decentralized perpetual futures
-- [GlueX](gluex/) - DeFi protocol integration
-- [OpenAI](openai/) - GPT API integration
-- [CoinGecko](coingecko/) - Crypto market data
-- [Alpha Vantage](alphavantage/) - Financial data
+- **GlueX** - Multi-chain DeFi routing and liquidity aggregation
+  - 6 tools available: liquidity, token search, routing, swaps
+  - Supports 7 blockchain networks
+  - Location: `protocols/gluex-protocol.json`
 
-### Beta Testing (🧪)
+### Coming Soon
 
-- [GitHub](github/) - Repository and code management
-- [Anthropic](anthropic/) - Claude API wrapper
-
-### In Development (🚧)
-
-- [Vercel](vercel/) - Deployment platform
-- [Discord](discord/) - Chat and community management
-- [Stripe](stripe/) - Payment processing
+More protocols are being added by the community. [Contribute yours!](CONTRIBUTING.md)
 
 ## How It Works
 

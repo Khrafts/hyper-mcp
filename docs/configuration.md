@@ -249,7 +249,7 @@ The server validates your configuration on startup and provides clear feedback:
 ⚠️  Running in READ-ONLY mode (no private key configured)
 ✅ Server initialized on port 3000
 📊 HyperLiquid integration: ACTIVE (market data only)
-🌐 Community protocols: 6 loaded (GlueX, others...)
+🌐 Community protocols: 1 loaded (GlueX)
 ```
 
 ### Full-Access Mode Confirmation
@@ -257,7 +257,7 @@ The server validates your configuration on startup and provides clear feedback:
 ```
 ✅ Server initialized on port 3000
 📊 HyperLiquid integration: ACTIVE (full trading access)
-🌐 Community protocols: 6 loaded with authentication
+🌐 Community protocols: 1 loaded with authentication
 🔐 Wallet: 0xABC...DEF (testnet)
 ```
 

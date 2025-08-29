@@ -71,13 +71,11 @@ This HyperLiquid integration showcases the depth possible with our platform - yo
 
 ## 📚 Tool Documentation
 
-### Community Protocol Tools (Unlimited - Growing Daily)
+### Community Protocol Tools
 
-| Protocol          | Category     | Tools     | Description                              | How to Add                                             |
-| ----------------- | ------------ | --------- | ---------------------------------------- | ------------------------------------------------------ |
-| **GlueX**         | DeFi Router  | 6         | Multi-chain swaps, liquidity aggregation | ✅ Live                                                |
-| **Your Protocol** | Any Category | Unlimited | Your API as AI tools                     | [🚀 Add in 30min](../../CONTRIBUTING.md)               |
-| **Coming Soon**   | Various      | 100+      | Community submissions in review          | [View PRs](https://github.com/khrafts/hyper-mcp/pulls) |
+| Protocol  | Category    | Tools | Description                              | Status  |
+| --------- | ----------- | ----- | ---------------------------------------- | ------- |
+| **GlueX** | DeFi Router | 6     | Multi-chain swaps, liquidity aggregation | ✅ Live |
 
 **Want your protocol listed here?** [Submit a JSON definition](../../CONTRIBUTING.md) - no coding required!
 
@@ -168,4 +166,4 @@ Explore the individual tool documentation in each category folder above.
 
 ---
 
-**🔥 New Tools Added Weekly!** The community is constantly adding new protocols and tools. [Join us](../../CONTRIBUTING.md) in building the most comprehensive AI-DeFi ecosystem!
+**🔥 Growing Ecosystem!** The community protocol system allows anyone to add new protocols and tools. [Join us](../../CONTRIBUTING.md) in building the AI-DeFi ecosystem!
